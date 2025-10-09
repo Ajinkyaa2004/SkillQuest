@@ -60,7 +60,8 @@ Phase 4 – Final Prep & Review: ✅ Debugging, full-screen/tab detection, docum
 👥 Roles & Responsibilities
 Team Member	Role	Responsibilities
 Ajinkya Dhumal	Frontend & UI Lead	🎨 UI design, state management, integration, project structure
-Yash [Surname]	Game Logic & Backend	🕹️ Game development, timers & scoring, auth flow, data storage, debugging
+Yash Dhiver	Game Logic & Backend	🕹️ Game development, timers & scoring, auth flow, data storage, debugging
+
 🧩 Code & Debugging
 
 📁 Folder Structure: Feature-based (auth, games, admin, chatbot, contexts, lib)
