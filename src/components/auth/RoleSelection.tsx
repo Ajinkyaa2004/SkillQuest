@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserCircle, Shield, Briefcase, Users, Sparkles } from 'lucide-react';
 import { UserRole } from '@/types';
@@ -45,6 +45,83 @@ const roles = [
     badgeColor: 'from-[orange] to-[red]',
   },
 ];
+
+// Particle interface
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  opacity: number;
+}
+
+// Particle System Component
+const ParticleSystem: React.FC = () => {
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  useEffect(() => {
+    // Initialize particles
+    const initialParticles: Particle[] = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 4 + 2,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      opacity: Math.random() * 0.5 + 0.2,
+    }));
+    setParticles(initialParticles);
+
+    // Animate particles
+    const interval = setInterval(() => {
+      setParticles((prev) =>
+        prev.map((particle) => {
+          let newX = particle.x + particle.speedX;
+          let newY = particle.y + particle.speedY;
+
+          // Bounce off edges
+          if (newX < 0 || newX > 100) particle.speedX *= -1;
+          if (newY < 0 || newY > 100) particle.speedY *= -1;
+
+          newX = Math.max(0, Math.min(100, newX));
+          newY = Math.max(0, Math.min(100, newY));
+
+          return { ...particle, x: newX, y: newY };
+        })
+      );
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full bg-[#8558ed]"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            opacity: particle.opacity,
+          }}
+          animate={{
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 // Sparkle component for header animation
 const Sparkle: React.FC<{ delay: number; x: string; y: string }> = ({ delay, x, y }) => (
@@ -116,6 +193,8 @@ const TiltCard: React.FC<{
 export const RoleSelection: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [hoveredRole, setHoveredRole] = useState<string | null>(null);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
 
   const handleRoleSelect = (role: UserRole, available: boolean) => {
     if (!available) {
@@ -135,6 +214,8 @@ export const RoleSelection: React.FC = () => {
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       className="min-h-screen bg-gradient-to-br from-[#f3f0fc] flex items-center justify-center p-6 relative overflow-hidden"
     >
+      {/* Particle System */}
+      <ParticleSystem />
 
       {/* Floating Background Orbs */}
       <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden">

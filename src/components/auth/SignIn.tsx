@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Mail, Lock, UserCircle, Shield, Sparkles, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, UserCircle, Shield, Sparkles, Eye, EyeOff, CheckCircle2, Rocket, Target, Lightbulb, Flame, Zap, Palette, Star, Trophy, Check, X, AlertCircle } from 'lucide-react';
 import { UserRole } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,6 +29,51 @@ const FloatingParticle: React.FC<{ delay: number; duration: number; x: string; y
   />
 );
 
+// Floating icon component for playful background
+const FloatingIcon: React.FC<{ Icon: React.ElementType; delay: number; x: string; y: string; color: string }> = ({ Icon, delay, x, y, color }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0, rotate: 0 }}
+    animate={{
+      opacity: [0, 0.4, 0],
+      scale: [0, 1.2, 0],
+      rotate: [0, 360],
+      y: [0, -100],
+    }}
+    transition={{
+      duration: 8,
+      repeat: Infinity,
+      delay,
+      ease: "easeInOut",
+    }}
+    className="absolute pointer-events-none"
+    style={{ left: x, top: y }}
+  >
+    <Icon className={`w-10 h-10 ${color}`} />
+  </motion.div>
+);
+
+// Password strength calculator
+const calculatePasswordStrength = (password: string): { strength: number; label: string; color: string } => {
+  let strength = 0;
+  if (password.length >= 8) strength += 25;
+  if (password.length >= 12) strength += 10;
+  if (/[a-z]/.test(password)) strength += 15;
+  if (/[A-Z]/.test(password)) strength += 15;
+  if (/[0-9]/.test(password)) strength += 15;
+  if (/[^a-zA-Z0-9]/.test(password)) strength += 20;
+
+  if (strength <= 30) return { strength, label: 'Weak', color: 'bg-red-500' };
+  if (strength <= 60) return { strength, label: 'Fair', color: 'bg-orange-500' };
+  if (strength <= 80) return { strength, label: 'Good', color: 'bg-yellow-500' };
+  return { strength, label: 'Strong', color: 'bg-green-500' };
+};
+
+// Email validation
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export const SignIn: React.FC = () => {
   const { role } = useParams<{ role: UserRole }>();
   const navigate = useNavigate();
@@ -42,11 +87,35 @@ export const SignIn: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const emailInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Form validation states
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [emailValid, setEmailValid] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, label: '', color: '' });
+  const [shakeError, setShakeError] = useState(false);
 
   // Auto-focus email field on mount
   React.useEffect(() => {
     emailInputRef.current?.focus();
   }, []);
+
+  // Real-time email validation
+  useEffect(() => {
+    if (email.length > 0) {
+      setEmailValid(isValidEmail(email));
+    } else {
+      setEmailValid(false);
+    }
+  }, [email]);
+
+  // Real-time password strength
+  useEffect(() => {
+    if (password.length > 0) {
+      setPasswordStrength(calculatePasswordStrength(password));
+    } else {
+      setPasswordStrength({ strength: 0, label: '', color: '' });
+    }
+  }, [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +150,15 @@ export const SignIn: React.FC = () => {
             navigate('/applicant/profile');
           }
         }, 1500);
+      } else {
+        // Trigger shake animation on error
+        setShakeError(true);
+        setTimeout(() => setShakeError(false), 500);
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
+      setShakeError(true);
+      setTimeout(() => setShakeError(false), 500);
     } finally {
       setLoading(false);
     }
@@ -161,10 +236,29 @@ export const SignIn: React.FC = () => {
         <FloatingParticle delay={7} duration={4.5} x="65%" y="35%" />
       </div>
 
+      {/* Playful floating icons */}
+      <FloatingIcon Icon={Rocket} delay={0} x="5%" y="10%" color="text-[#8558ed]" />
+      <FloatingIcon Icon={Sparkles} delay={1} x="15%" y="80%" color="text-[#b18aff]" />
+      <FloatingIcon Icon={Target} delay={2} x="85%" y="15%" color="text-[#8558ed]" />
+      <FloatingIcon Icon={Lightbulb} delay={3} x="90%" y="70%" color="text-[#b18aff]" />
+      <FloatingIcon Icon={Flame} delay={4} x="10%" y="50%" color="text-[#8558ed]" />
+      <FloatingIcon Icon={Zap} delay={5} x="80%" y="85%" color="text-[#b18aff]" />
+      <FloatingIcon Icon={Palette} delay={6} x="25%" y="25%" color="text-[#8558ed]" />
+      <FloatingIcon Icon={Star} delay={7} x="70%" y="40%" color="text-[#b18aff]" />
+      <FloatingIcon Icon={Trophy} delay={8} x="50%" y="90%" color="text-[#8558ed]" />
+
       <motion.div
         initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+        animate={{ 
+          y: 0, 
+          opacity: 1,
+          x: shakeError ? [-10, 10, -10, 10, 0] : 0
+        }}
+        transition={{ 
+          duration: shakeError ? 0.5 : 0.8, 
+          ease: [0.22, 1, 0.36, 1], 
+          delay: shakeError ? 0 : 0.2 
+        }}
         className="w-full max-w-md"
       >
         <Card className="border-white/40 bg-white/80 backdrop-blur-xl shadow-2xl shadow-[#8558ed]/10">
@@ -186,23 +280,51 @@ export const SignIn: React.FC = () => {
             </motion.div>
 
             {/* Role Icon Header */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
-              className="flex justify-center"
-            >
-              <div className="relative">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#8558ed] to-[#b18aff] blur-xl opacity-50"
-                />
-                <div className="relative bg-gradient-to-tr from-[#8558ed] to-[#b18aff] w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                  <RoleIcon className="w-8 h-8 text-white" />
-                </div>
-              </div>
-            </motion.div>
+        {/* Fun Password Field Animation Header */}
+<motion.div
+  initial={{ scale: 0 }}
+  animate={{ scale: 1 }}
+  transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.3 }}
+  className="flex justify-center"
+>
+  <motion.div
+    className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-[#8558ed] to-[#b18aff] flex items-center justify-center shadow-lg"
+    whileHover={{ scale: 1.05, rotate: 5 }}
+    whileTap={{ scale: 0.95 }}
+  >
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={isSignUp ? 'peek' : 'hide'}
+        initial={{ opacity: 0, y: 10, rotate: -10 }}
+        animate={{ opacity: 1, y: 0, rotate: 0 }}
+        exit={{ opacity: 0, y: -10, rotate: 10 }}
+        transition={{ duration: 0.3 }}
+        className="text-5xl"
+      >
+        {isSignUp ? '🙉' : '🙈'}
+      </motion.span>
+    </AnimatePresence>
+
+    {/* Decorative floating sparkles */}
+    <motion.div
+      className="absolute -top-2 -right-2 text-[#fff]"
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: [0, 1, 0], scale: [0, 1.2, 0] }}
+      transition={{ repeat: Infinity, duration: 2, delay: 0.8 }}
+    >
+      ✨
+    </motion.div>
+    <motion.div
+      className="absolute -bottom-2 -left-2 text-[#fff]"
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: [0, 1, 0], scale: [0, 1.2, 0] }}
+      transition={{ repeat: Infinity, duration: 2, delay: 1.2 }}
+    >
+      💫
+    </motion.div>
+  </motion.div>
+</motion.div>
+
 
             <div className="text-center space-y-2">
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[#8558ed] to-[#b18aff] bg-clip-text text-transparent">
@@ -273,16 +395,56 @@ export const SignIn: React.FC = () => {
                   <Mail className="w-4 h-4 text-[#8558ed]" />
                   Email Address
                 </Label>
-                <Input
-                  ref={emailInputRef}
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20 transition-all duration-300"
-                />
+                <div className="relative">
+                  <Input
+                    ref={emailInputRef}
+                    id="email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setEmailTouched(true)}
+                    required
+                    className={`border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20 transition-all duration-300 pr-10 ${
+                      emailTouched && !emailValid && email.length > 0 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                    } ${
+                      emailValid ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20' : ''
+                    }`}
+                  />
+                  {/* Email validation indicator */}
+                  <AnimatePresence>
+                    {email.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {emailValid ? (
+                          <Check className="w-5 h-5 text-green-500" />
+                        ) : emailTouched ? (
+                          <X className="w-5 h-5 text-red-500" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-gray-400" />
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                {/* Email validation message */}
+                <AnimatePresence>
+                  {emailTouched && !emailValid && email.length > 0 && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="text-xs text-red-500 flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" />
+                      Please enter a valid email address
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </motion.div>
 
               <motion.div
@@ -331,6 +493,99 @@ export const SignIn: React.FC = () => {
                     )}
                   </motion.button>
                 </div>
+                
+                {/* Password strength meter */}
+                <AnimatePresence>
+                  {isSignUp && password.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Password strength:</span>
+                        <span className={`text-xs font-semibold ${
+                          passwordStrength.label === 'Weak' ? 'text-red-500' :
+                          passwordStrength.label === 'Fair' ? 'text-orange-500' :
+                          passwordStrength.label === 'Good' ? 'text-yellow-500' :
+                          'text-green-500'
+                        }`}>
+                          {passwordStrength.label}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${passwordStrength.strength}%` }}
+                          transition={{ duration: 0.3 }}
+                          className={`h-full ${passwordStrength.color} transition-colors duration-300`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          {password.length >= 8 ? (
+                            <Check className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <X className="w-3 h-3 text-gray-400" />
+                          )}
+                          <span className={password.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
+                            At least 8 characters
+                          </span>
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.05 }}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          {/[A-Z]/.test(password) ? (
+                            <Check className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <X className="w-3 h-3 text-gray-400" />
+                          )}
+                          <span className={/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-500'}>
+                            One uppercase letter
+                          </span>
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 }}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          {/[0-9]/.test(password) ? (
+                            <Check className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <X className="w-3 h-3 text-gray-400" />
+                          )}
+                          <span className={/[0-9]/.test(password) ? 'text-green-600' : 'text-gray-500'}>
+                            One number
+                          </span>
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.15 }}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          {/[^a-zA-Z0-9]/.test(password) ? (
+                            <Check className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <X className="w-3 h-3 text-gray-400" />
+                          )}
+                          <span className={/[^a-zA-Z0-9]/.test(password) ? 'text-green-600' : 'text-gray-500'}>
+                            One special character
+                          </span>
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
 
               <AnimatePresence>

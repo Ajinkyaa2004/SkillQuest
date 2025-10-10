@@ -18,6 +18,8 @@ export interface ApplicantProfile {
   location: string;
   interestedRoles: string[];
   resumeUrl?: string;
+  resumeLink?: string;
+  websiteLink?: string;
   telegramId: string;
   profileCompleted: boolean;
   createdAt: string;
@@ -82,6 +84,8 @@ export interface ChatMessage {
   sender: 'user' | 'bot';
   message: string;
   timestamp: string;
+  relatedQuestions?: string[];
+  feedback?: 'positive' | 'negative' | null;
 }
 
 export const LOCATIONS = [
