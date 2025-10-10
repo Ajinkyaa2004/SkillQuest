@@ -10,6 +10,8 @@ import { Results } from '@/components/applicant/Results';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { Messaging } from '@/components/admin/Messaging';
 import { Chatbot } from '@/components/chatbot/Chatbot';
+import { ToastDemo } from '@/components/demo/ToastDemo';
+import { Toaster } from 'sonner';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles: string[] }> = ({ children, allowedRoles }) => {
@@ -35,6 +37,7 @@ function AppRoutes() {
         {/* Public Routes */}
         <Route path="/" element={<RoleSelection />} />
         <Route path="/auth/:role" element={<SignIn />} />
+        <Route path="/demo/toast" element={<ToastDemo />} />
 
         {/* Applicant Routes */}
         <Route
@@ -103,6 +106,25 @@ function App() {
     <Router>
       <AuthProvider>
         <AppRoutes />
+        <Toaster 
+          position="top-center" 
+          expand={false}
+          richColors={false}
+          closeButton
+          toastOptions={{
+            style: {
+              background: 'linear-gradient(135deg, #8558ed 0%, #b18aff 100%)',
+              border: '2px solid #8558ed',
+              color: 'white',
+              minHeight: '48px',
+              maxHeight: '60px',
+              padding: '12px 16px',
+              fontSize: '14px',
+              fontWeight: '600',
+            },
+            className: 'sonner-toast',
+          }}
+        />
       </AuthProvider>
     </Router>
   );

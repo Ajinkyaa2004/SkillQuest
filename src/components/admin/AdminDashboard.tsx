@@ -8,6 +8,7 @@ import { getProfiles, getAssessments, getLeaderboard } from '@/lib/storage';
 import { ApplicantProfile, Assessment, LeaderboardEntry } from '@/types';
 import { Users, Trophy, CheckCircle, Clock, LogOut, Search, Download, Mail } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -71,7 +72,10 @@ export const AdminDashboard: React.FC = () => {
 
   const sendMessages = () => {
     if (selectedCandidates.size === 0) {
-      alert('Please select at least one candidate.');
+      toast.error('Please select at least one candidate.', {
+        duration: 4000,
+        icon: '👥',
+      });
       return;
     }
     navigate('/admin/messaging', { state: { selectedCandidates: Array.from(selectedCandidates) } });

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileByUserId, getAssessmentByUserId, saveAssessment } from '@/lib/storage';
 import { Assessment, GameType } from '@/types';
-import { Lock, Play, CheckCircle, Trophy, LogOut, Bomb, Car, Droplet, Sparkles, Target, Zap, Star, Flame, TrendingUp, Rocket, Dumbbell, Flag, Clock } from 'lucide-react';
+import { Lock, Play, CheckCircle, Trophy, LogOut, Bomb, Car, Droplet, Sparkles, Target, Zap, Star, Flame, TrendingUp, Rocket, Dumbbell, Flag, Clock, XCircle } from 'lucide-react';
 import { generateCandidateId } from '@/lib/utils';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 
@@ -476,24 +476,37 @@ export const AssessmentDashboard: React.FC = () => {
                   </motion.div>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600">
-                  {games.map((game, idx) => (
-                    <div key={game.type} className="flex items-center gap-1">
-                      {isGameCompleted(game.type) ? (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 500 }}
-                        >
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        </motion.div>
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
-                      )}
-                      <span className={isGameCompleted(game.type) ? 'text-green-600 font-semibold' : ''}>
-                        {game.title}
-                      </span>
-                    </div>
-                  ))}
+                  {games.map((game) => {
+                    const gameScore = assessment.games[game.type];
+                    const isCompleted = isGameCompleted(game.type);
+                    const isFailed = gameScore?.failed;
+                    
+                    return (
+                      <div key={game.type} className="flex items-center gap-1">
+                        {isCompleted ? (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 500 }}
+                          >
+                            {isFailed ? (
+                              <XCircle className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            )}
+                          </motion.div>
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                        )}
+                        <span className={
+                          isFailed ? 'text-red-600 font-semibold' :
+                          isCompleted ? 'text-green-600 font-semibold' : ''
+                        }>
+                          {game.title}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
@@ -634,7 +647,16 @@ export const AssessmentDashboard: React.FC = () => {
                             <Lock className="w-6 h-6 text-gray-400" />
                           </motion.div>
                         )}
-                        {completed && (
+                        {completed && score?.failed && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                          >
+                            <XCircle className="w-6 h-6 text-red-600" />
+                          </motion.div>
+                        )}
+                        {completed && !score?.failed && (
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -660,14 +682,34 @@ export const AssessmentDashboard: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                      className="p-3 bg-gradient-to-r from-[#f3f0fc] to-[#faf9fc] rounded-md border border-[#8558ed]/20"
+                      className={`p-3 rounded-md border ${
+                        score.failed 
+                          ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-300'
+                          : 'bg-gradient-to-r from-[#f3f0fc] to-[#faf9fc] border-[#8558ed]/20'
+                      }`}
                     >
-                      <div className="text-sm font-semibold text-[#8558ed]">
-                        Score: <AnimatedCounter value={score.puzzlesCompleted} duration={1.5} /> puzzles completed
-                      </div>
-                      <div className="text-xs text-[#7347d6]">
-                        Time: {Math.floor(score.timeSpent / 60)}:{(score.timeSpent % 60).toString().padStart(2, '0')}
-                      </div>
+                      {score.failed ? (
+                        <>
+                          <div className="text-sm font-bold text-red-600 flex items-center gap-2">
+                            <XCircle className="w-4 h-4" />
+                            Failed
+                          </div>
+                          {score.failureReason && (
+                            <div className="text-xs text-red-700 mt-1">
+                              {score.failureReason}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm font-semibold text-[#8558ed]">
+                            Score: <AnimatedCounter value={score.puzzlesCompleted} duration={1.5} /> puzzles completed
+                          </div>
+                          <div className="text-xs text-[#7347d6]">
+                            Time: {Math.floor(score.timeSpent / 60)}:{(score.timeSpent % 60).toString().padStart(2, '0')}
+                          </div>
+                        </>
+                      )}
                     </motion.div>
                   )}
 

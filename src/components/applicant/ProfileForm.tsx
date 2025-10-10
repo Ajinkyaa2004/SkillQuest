@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ApplicantProfile, LOCATIONS, ROLES } from '@/types';
 import { saveProfile, getProfileByUserId } from '@/lib/storage';
 import { generateCandidateId } from '@/lib/utils';
+import { toast } from 'sonner';
 import { LogOut, Sparkles, Target, Zap, Star, Flame, Trophy, Link2, Globe, User, Mail, Phone, MessageCircle, GraduationCap, Award, MapPin, Briefcase, Code, Palette, TrendingUp, Users, Megaphone, Heart, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -170,7 +171,10 @@ export const ProfileForm: React.FC = () => {
         navigate('/applicant/assessment');
       }, 2000);
     } catch (error) {
-      alert('Error saving profile. Please try again.');
+      toast.error('Error saving profile. Please try again.', {
+        duration: 4000,
+        icon: '❌',
+      });
     } finally {
       setLoading(false);
     }
@@ -517,9 +521,11 @@ export const ProfileForm: React.FC = () => {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      if (confirm('Are you sure you want to logout? Your progress will be saved.')) {
-                        logout();
-                      }
+                      toast.info('Your progress has been saved!', {
+                        duration: 2000,
+                        icon: '💾',
+                      });
+                      setTimeout(() => logout(), 500);
                     }}
                     className="border-2 border-[#8558ed]/30"
                   >

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Flag, Bomb, Trophy } from 'lucide-react';
+import { Flag, Bomb, Trophy, Sparkles, Zap, Star, Target, Flame } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
+import { useNavigate } from 'react-router-dom';
 
 interface Cell {
   isMine: boolean;
@@ -10,12 +13,13 @@ interface Cell {
 }
 
 interface MinesweeperProps {
-  onComplete: (score: number, errors: number) => void;
+  onComplete: (score: number, errors: number, failed?: boolean, failureReason?: string) => void;
   timeRemaining: number;
   isTrialMode?: boolean;
 }
 
 export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemaining, isTrialMode = false }) => {
+  const navigate = useNavigate();
   const [grid, setGrid] = useState<Cell[][]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
@@ -24,6 +28,17 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
   const [puzzlesCompleted, setPuzzlesCompleted] = useState(0);
   const [gridSize, setGridSize] = useState(8);
   const [mineCount, setMineCount] = useState(10);
+
+  // Tab switch detection - only enabled when not in trial mode
+  useTabSwitchDetection({
+    maxViolations: 3,
+    enabled: !isTrialMode,
+    onDisqualified: () => {
+      // Mark as failed and navigate to assessment page
+      onComplete(puzzlesCompleted, errors, true, 'Disqualified due to tab switching violations');
+      navigate('/applicant/assessment');
+    },
+  });
 
   const initializeGrid = useCallback((size: number, mines: number) => {
     const newGrid: Cell[][] = Array(size).fill(null).map(() =>
@@ -162,11 +177,13 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
 
   const getCellColor = (cell: Cell) => {
     if (!cell.isRevealed) {
-      return cell.isFlagged ? 'bg-yellow-400' : 'bg-gray-300 hover:bg-gray-400';
+      return cell.isFlagged 
+        ? 'bg-gradient-to-br from-yellow-400 to-orange-400 border-2 border-yellow-500' 
+        : 'bg-gradient-to-br from-[#8558ed]/80 to-[#b18aff]/80 hover:from-[#8558ed] hover:to-[#b18aff] border-2 border-[#8558ed]/30';
     }
-    if (cell.isMine) return 'bg-red-500';
-    if (cell.neighborMines === 0) return 'bg-gray-100';
-    return 'bg-white';
+    if (cell.isMine) return 'bg-gradient-to-br from-red-500 to-rose-600 border-2 border-red-600';
+    if (cell.neighborMines === 0) return 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200';
+    return 'bg-gradient-to-br from-white to-gray-50 border-2 border-gray-300';
   };
 
   const getCellText = (cell: Cell) => {
@@ -179,62 +196,333 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
   };
 
   const getNumberColor = (num: number) => {
-    const colors = ['', 'text-blue-600', 'text-green-600', 'text-red-600', 'text-purple-600', 'text-orange-600', 'text-pink-600', 'text-gray-600', 'text-black'];
-    return colors[num] || 'text-black';
+    const colors = [
+      '', 
+      'text-blue-600 font-extrabold', 
+      'text-green-600 font-extrabold', 
+      'text-red-600 font-extrabold', 
+      'text-[#8558ed] font-extrabold', 
+      'text-orange-600 font-extrabold', 
+      'text-pink-600 font-extrabold', 
+      'text-gray-700 font-extrabold', 
+      'text-black font-extrabold'
+    ];
+    return colors[num] || 'text-black font-extrabold';
   };
 
   return (
-    <div className="flex flex-col items-center space-y-4 p-4">
-      <div className="flex items-center justify-between w-full max-w-2xl">
-        <div className="text-lg font-semibold">
-          <Trophy className="inline w-5 h-5 mr-2 text-yellow-500" />
-          Level: {level}
-        </div>
-        <div className="text-lg font-semibold">
-          Puzzles Completed: {puzzlesCompleted}
-        </div>
-        <div className="text-lg font-semibold text-red-600">
-          Errors: {errors}
-        </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] flex flex-col items-center justify-center p-6 relative overflow-hidden"
+    >
+      {/* Animated Background Orbs */}
+      <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute w-96 h-96 bg-[#8558ed]/20 rounded-full blur-3xl top-10 -left-20"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute w-80 h-80 bg-[#b18aff]/20 rounded-full blur-3xl bottom-10 -right-20"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.15, 0.25, 0.15],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute w-72 h-72 bg-[#8558ed]/15 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
       </div>
 
-      {won && (
-        <div className="text-2xl font-bold text-green-600 animate-pulse">
-          Level Complete! 🎉
-        </div>
-      )}
-
-      {gameOver && (
-        <div className="text-2xl font-bold text-red-600 animate-pulse">
-          Mine Hit! Restarting...
-        </div>
-      )}
-
-      <div 
-        className="inline-grid gap-1 p-4 bg-gray-200 rounded-lg"
-        style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+      {/* Floating Icons */}
+      <motion.div
+        animate={{
+          y: [0, -20, 0],
+          rotate: [0, 10, 0],
+        }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-20 left-10 pointer-events-none"
       >
-        {grid.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <button
-              key={`${rowIndex}-${colIndex}`}
-              className={`w-8 h-8 flex items-center justify-center text-sm font-bold border border-gray-400 rounded transition-all ${getCellColor(cell)}`}
-              onClick={() => revealCell(rowIndex, colIndex)}
-              onContextMenu={(e) => toggleFlag(rowIndex, colIndex, e)}
-              disabled={gameOver || won}
+        <Sparkles className="w-8 h-8 text-[#8558ed]/30" />
+      </motion.div>
+      <motion.div
+        animate={{
+          y: [0, 20, 0],
+          rotate: [0, -10, 0],
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute top-32 right-16 pointer-events-none"
+      >
+        <Zap className="w-10 h-10 text-[#b18aff]/30" />
+      </motion.div>
+      <motion.div
+        animate={{
+          y: [0, -15, 0],
+          rotate: [0, 15, 0],
+        }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute bottom-24 left-20 pointer-events-none"
+      >
+        <Star className="w-7 h-7 text-[#8558ed]/30" />
+      </motion.div>
+      <motion.div
+        animate={{
+          y: [0, 18, 0],
+          rotate: [0, -12, 0],
+        }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        className="absolute bottom-32 right-24 pointer-events-none"
+      >
+        <Target className="w-9 h-9 text-[#b18aff]/30" />
+      </motion.div>
+
+      {/* Header */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="text-center mb-8"
+      >
+        <motion.h1
+          className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] 
+           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2"
+        >
+          💣 Minesweeper Quest
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-[#8558ed]/80 font-medium flex items-center justify-center gap-2"
+        >
+          <Flame className="w-5 h-5" />
+          Clear the board without hitting mines!
+        </motion.p>
+      </motion.div>
+
+      {/* Stats Cards */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="flex items-center gap-4 mb-6 flex-wrap justify-center"
+      >
+        <motion.div
+          whileHover={{ scale: 1.05, y: -2 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl px-6 py-3 shadow-lg shadow-[#8558ed]/10"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-tr from-[#8558ed] to-[#b18aff] w-10 h-10 rounded-full flex items-center justify-center"
             >
-              <span className={getNumberColor(cell.neighborMines)}>
-                {getCellText(cell)}
-              </span>
-            </button>
-          ))
+              <Trophy className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xs text-[#030303]/60 font-medium">Level</div>
+              <div className="text-2xl font-bold text-[#8558ed]">{level}</div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.05, y: -2 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl px-6 py-3 shadow-lg shadow-[#8558ed]/10"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-tr from-green-500 to-emerald-500 w-10 h-10 rounded-full flex items-center justify-center"
+            >
+              <Star className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xs text-[#030303]/60 font-medium">Completed</div>
+              <div className="text-2xl font-bold text-green-600">{puzzlesCompleted}</div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.05, y: -2 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl px-6 py-3 shadow-lg shadow-[#8558ed]/10"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-tr from-red-500 to-rose-500 w-10 h-10 rounded-full flex items-center justify-center"
+            >
+              <Bomb className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xs text-[#030303]/60 font-medium">Errors</div>
+              <div className="text-2xl font-bold text-red-600">{errors}</div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Win Animation */}
+      <AnimatePresence>
+        {won && (
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            exit={{ scale: 0, rotate: 180 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="mb-4"
+          >
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity }}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl shadow-green-500/30 flex items-center gap-3"
+            >
+              <motion.span
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="text-3xl"
+              >
+                🎉
+              </motion.span>
+              <span className="text-2xl font-bold">Level Complete!</span>
+              <motion.span
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+                className="text-3xl"
+              >
+                ✨
+              </motion.span>
+            </motion.div>
+          </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* Game Over Animation */}
+      <AnimatePresence>
+        {gameOver && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="mb-4"
+          >
+            <motion.div
+              animate={{ x: [-5, 5, -5, 5, 0] }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-r from-red-500 to-rose-500 text-white px-8 py-4 rounded-2xl shadow-2xl shadow-red-500/30 flex items-center gap-3"
+            >
+              <motion.span
+                animate={{ rotate: [0, 20, -20, 0] }}
+                transition={{ duration: 0.5, repeat: 2 }}
+                className="text-3xl"
+              >
+                💥
+              </motion.span>
+              <span className="text-2xl font-bold">Mine Hit! Restarting...</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Game Board and Instructions Side by Side */}
+      <div className="flex items-start gap-8 justify-center">
+        {/* Instructions - Left Side */}
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="w-64"
+        >
+          <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-lg shadow-[#8558ed]/10 sticky top-8">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Target className="w-5 h-5 text-[#8558ed]" />
+              <h3 className="text-lg font-bold text-[#8558ed]">How to Play</h3>
+            </div>
+            <div className="space-y-2 text-sm text-[#030303]/70">
+              <p className="flex items-center gap-2">
+                <span className="text-lg">👆</span>
+                <span><strong>Left-click</strong> to reveal cells</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-lg">🚩</span>
+                <span><strong>Right-click</strong> to flag mines</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-lg">🎯</span>
+                <span>Clear all safe cells to win!</span>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Game Board - Right Side */}
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-3xl p-6 shadow-2xl shadow-[#8558ed]/20"
+        >
+          <div 
+            className="inline-grid gap-1.5"
+            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+          >
+            {grid.map((row, rowIndex) =>
+              row.map((cell, colIndex) => (
+                <motion.button
+                  key={`${rowIndex}-${colIndex}`}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ 
+                    delay: (rowIndex * gridSize + colIndex) * 0.01,
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20
+                  }}
+                  whileHover={{ scale: cell.isRevealed ? 1 : 1.1, y: cell.isRevealed ? 0 : -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`w-10 h-10 flex items-center justify-center text-sm font-bold rounded-lg transition-all duration-200 ${getCellColor(cell)} ${
+                    !cell.isRevealed ? 'shadow-md hover:shadow-lg' : ''
+                  }`}
+                  onClick={() => revealCell(rowIndex, colIndex)}
+                  onContextMenu={(e) => toggleFlag(rowIndex, colIndex, e)}
+                  disabled={gameOver || won}
+                >
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className={getNumberColor(cell.neighborMines)}
+                  >
+                    {getCellText(cell)}
+                  </motion.span>
+                </motion.button>
+              ))
+            )}
+          </div>
+        </motion.div>
       </div>
 
-      <div className="text-sm text-gray-600 text-center max-w-md">
-        <p><strong>How to play:</strong> Left-click to reveal cells. Right-click to flag mines.</p>
-        <p>Clear all safe cells without hitting mines to complete each level!</p>
-      </div>
-    </div>
+      <style>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x { background-size: 200% 200%; animation: gradient-x 5s ease infinite; }
+      `}</style>
+    </motion.div>
   );
 };

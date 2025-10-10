@@ -10,6 +10,7 @@ import { Minesweeper } from '@/components/games/Minesweeper';
 import { UnblockMe } from '@/components/games/UnblockMe';
 import { WaterCapacity } from '@/components/games/WaterCapacity';
 import { AlertTriangle, Maximize, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 const GAME_DURATION = 300; // 5 minutes in seconds
 
@@ -99,11 +100,17 @@ export const GameWrapper: React.FC = () => {
           const newCount = prev + 1;
           if (newCount >= 3) {
             setIsDisqualified(true);
-            alert('You have been disqualified for excessive tab switching.');
+            toast.error('You have been disqualified for excessive tab switching.', {
+              duration: 5000,
+              icon: '🚫',
+            });
             navigate('/applicant/assessment');
           } else {
             setShowWarning(true);
-            alert(`Warning ${newCount}/3: Tab switching detected. Further violations will result in disqualification.`);
+            toast.warning(`Warning ${newCount}/3: Tab switching detected. Further violations will result in disqualification.`, {
+              duration: 4000,
+              icon: '⚠️',
+            });
             setTimeout(() => setShowWarning(false), 3000);
           }
           return newCount;
@@ -121,7 +128,10 @@ export const GameWrapper: React.FC = () => {
       setIsFullscreen(true);
       setGameStarted(true);
     } catch (err) {
-      alert('Please enable fullscreen to start the assessment.');
+      toast.error('Please enable fullscreen to start the assessment.', {
+        duration: 4000,
+        icon: '📺',
+      });
     }
   };
 
@@ -131,7 +141,7 @@ export const GameWrapper: React.FC = () => {
     }
   };
 
-  const handleGameComplete = useCallback((score: number, metadata: number) => {
+  const handleGameComplete = useCallback((score: number, metadata: number, failed?: boolean, failureReason?: string) => {
     if (!user || !gameType || isTrial) {
       if (isTrial) {
         exitFullscreen();
@@ -151,6 +161,8 @@ export const GameWrapper: React.FC = () => {
       minimumMoves: gameType !== 'minesweeper' ? metadata : undefined,
       completedAt: new Date().toISOString(),
       trialCompleted: false,
+      failed: failed || false,
+      failureReason: failureReason,
     };
 
     assessment.games[gameType] = gameScore;
@@ -171,10 +183,17 @@ export const GameWrapper: React.FC = () => {
   }, [user, gameType, timeRemaining, navigate, isTrial]);
 
   const quitGame = () => {
-    if (confirm('Are you sure you want to quit? Your progress will not be saved.')) {
-      exitFullscreen();
-      navigate('/applicant/assessment');
-    }
+    toast.warning('Progress will not be saved if you quit now!', {
+      duration: 3000,
+      icon: '⚠️',
+      action: {
+        label: 'Quit Anyway',
+        onClick: () => {
+          exitFullscreen();
+          navigate('/applicant/assessment');
+        },
+      },
+    });
   };
 
   const getGameTitle = () => {

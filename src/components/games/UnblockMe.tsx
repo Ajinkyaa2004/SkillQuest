@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Car as CarIcon } from 'lucide-react';
+import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Block {
   id: number;
@@ -13,7 +16,7 @@ interface Block {
 }
 
 interface UnblockMeProps {
-  onComplete: (score: number, totalMoves: number) => void;
+  onComplete: (score: number, totalMoves: number, failed?: boolean, failureReason?: string) => void;
   timeRemaining: number;
   isTrialMode?: boolean;
 }
@@ -23,12 +26,24 @@ const TARGET_ROW = 2;
 const TARGET_EXIT_COL = 5;
 
 export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining, isTrialMode = false }) => {
+  const navigate = useNavigate();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
   const [level, setLevel] = useState(1);
   const [puzzlesCompleted, setPuzzlesCompleted] = useState(0);
   const [totalMoves, setTotalMoves] = useState(0);
+
+  // Tab switch detection - only enabled when not in trial mode
+  useTabSwitchDetection({
+    maxViolations: 3,
+    enabled: !isTrialMode,
+    onDisqualified: () => {
+      // Mark as failed and navigate to assessment page
+      onComplete(puzzlesCompleted, totalMoves, true, 'Disqualified due to tab switching violations');
+      navigate('/applicant/assessment');
+    },
+  });
 
   const generatePuzzle = useCallback((difficulty: number): Block[] => {
     const newBlocks: Block[] = [];
@@ -248,68 +263,289 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
   const gridCells = renderGrid();
 
   return (
-    <div className="flex flex-col items-center space-y-4 p-4" onKeyDown={handleKeyDown} tabIndex={0}>
-      <div className="flex items-center justify-between w-full max-w-2xl">
-        <div className="text-lg font-semibold">
-          <Trophy className="inline w-5 h-5 mr-2 text-yellow-500" />
-          Level: {level}
-        </div>
-        <div className="text-lg font-semibold">
-          Puzzles Completed: {puzzlesCompleted}
-        </div>
-        <div className="text-lg font-semibold">
-          Moves: {moves}
-        </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+    >
+      {/* Animated Background Orbs */}
+      <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute w-96 h-96 bg-[#8558ed]/20 rounded-full blur-3xl top-10 -left-20"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute w-80 h-80 bg-[#b18aff]/20 rounded-full blur-3xl bottom-10 -right-20"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.15, 0.25, 0.15],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute w-72 h-72 bg-[#8558ed]/15 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
       </div>
 
-      <div className="grid grid-cols-6 gap-1 p-4 bg-gray-800 rounded-lg" style={{ width: '384px', height: '384px' }}>
-        {gridCells.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              className="bg-gray-700 border border-gray-600 rounded"
+      {/* Floating Icons */}
+      <motion.div
+        animate={{
+          y: [0, -20, 0],
+          rotate: [0, 10, 0],
+        }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-20 left-10 pointer-events-none"
+      >
+        <Sparkles className="w-8 h-8 text-[#8558ed]/30" />
+      </motion.div>
+      <motion.div
+        animate={{
+          y: [0, 20, 0],
+          rotate: [0, -10, 0],
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute top-32 right-16 pointer-events-none"
+      >
+        <Zap className="w-10 h-10 text-[#b18aff]/30" />
+      </motion.div>
+      <motion.div
+        animate={{
+          y: [0, -15, 0],
+          rotate: [0, 15, 0],
+        }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute bottom-24 left-20 pointer-events-none"
+      >
+        <Star className="w-7 h-7 text-[#8558ed]/30" />
+      </motion.div>
+      <motion.div
+        animate={{
+          y: [0, 18, 0],
+          rotate: [0, -12, 0],
+        }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        className="absolute bottom-32 right-24 pointer-events-none"
+      >
+        <Target className="w-9 h-9 text-[#b18aff]/30" />
+      </motion.div>
+
+      {/* Header */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="text-center mb-8"
+      >
+        <motion.h1
+          className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] 
+           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2"
+        >
+          🚗 Unblock Me Quest
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-[#8558ed]/80 font-medium flex items-center justify-center gap-2"
+        >
+          <CarIcon className="w-5 h-5" />
+          Move blocks to free the red car!
+        </motion.p>
+      </motion.div>
+
+      {/* Stats Cards */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="flex items-center gap-4 mb-6 flex-wrap justify-center"
+      >
+        <motion.div
+          whileHover={{ scale: 1.05, y: -2 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl px-6 py-3 shadow-lg shadow-[#8558ed]/10"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-tr from-[#8558ed] to-[#b18aff] w-10 h-10 rounded-full flex items-center justify-center"
             >
-              {cell || <div className="w-full h-full" />}
+              <Trophy className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xs text-[#030303]/60 font-medium">Level</div>
+              <div className="text-2xl font-bold text-[#8558ed]">{level}</div>
             </div>
-          ))
-        )}
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.05, y: -2 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl px-6 py-3 shadow-lg shadow-[#8558ed]/10"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-tr from-green-500 to-emerald-500 w-10 h-10 rounded-full flex items-center justify-center"
+            >
+              <Star className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xs text-[#030303]/60 font-medium">Completed</div>
+              <div className="text-2xl font-bold text-green-600">{puzzlesCompleted}</div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.05, y: -2 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl px-6 py-3 shadow-lg shadow-[#8558ed]/10"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-tr from-blue-500 to-cyan-500 w-10 h-10 rounded-full flex items-center justify-center"
+            >
+              <Target className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xs text-[#030303]/60 font-medium">Moves</div>
+              <div className="text-2xl font-bold text-blue-600">{moves}</div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Game Board and Instructions Side by Side */}
+      <div className="flex items-start gap-8 justify-center">
+        {/* Instructions - Left Side */}
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="w-64"
+        >
+          <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-lg shadow-[#8558ed]/10 sticky top-8">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Target className="w-5 h-5 text-[#8558ed]" />
+              <h3 className="text-lg font-bold text-[#8558ed]">How to Play</h3>
+            </div>
+            <div className="space-y-2 text-sm text-[#030303]/70">
+              <p className="flex items-center gap-2">
+                <span className="text-lg">👆</span>
+                <span><strong>Click a block</strong> to select it</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-lg">⌨️</span>
+                <span><strong>Use arrow keys</strong> or buttons to move</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-lg">🚗</span>
+                <span><strong>Move the red car</strong> to the exit!</span>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Game Board and Controls - Right Side */}
+        <div className="flex flex-col items-center gap-6">
+          {/* Game Board */}
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-3xl p-6 shadow-2xl shadow-[#8558ed]/20"
+          >
+            <div className="grid grid-cols-6 gap-1.5 p-4 bg-gradient-to-br from-[#8558ed]/10 to-[#b18aff]/10 rounded-2xl" style={{ width: '400px', height: '400px' }}>
+              {gridCells.map((row, rowIndex) =>
+                row.map((cell, colIndex) => (
+                  <motion.div
+                    key={`${rowIndex}-${colIndex}`}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ 
+                      delay: (rowIndex * 6 + colIndex) * 0.01,
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20
+                    }}
+                    className="bg-gradient-to-br from-white/60 to-gray-100/60 border-2 border-white/40 rounded-lg overflow-hidden"
+                  >
+                    {cell || <div className="w-full h-full" />}
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </motion.div>
+
+          {/* Control Buttons */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex gap-3"
+          >
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'up')}
+                disabled={selectedBlock === null}
+                className="w-14 h-14 bg-gradient-to-br from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white text-2xl font-bold rounded-xl shadow-lg disabled:opacity-50"
+              >
+                ↑
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'down')}
+                disabled={selectedBlock === null}
+                className="w-14 h-14 bg-gradient-to-br from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white text-2xl font-bold rounded-xl shadow-lg disabled:opacity-50"
+              >
+                ↓
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'left')}
+                disabled={selectedBlock === null}
+                className="w-14 h-14 bg-gradient-to-br from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white text-2xl font-bold rounded-xl shadow-lg disabled:opacity-50"
+              >
+                ←
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'right')}
+                disabled={selectedBlock === null}
+                className="w-14 h-14 bg-gradient-to-br from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white text-2xl font-bold rounded-xl shadow-lg disabled:opacity-50"
+              >
+                →
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
       </div>
 
-      <div className="flex space-x-4">
-        <Button
-          onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'up')}
-          disabled={selectedBlock === null}
-          size="sm"
-        >
-          ↑
-        </Button>
-        <Button
-          onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'down')}
-          disabled={selectedBlock === null}
-          size="sm"
-        >
-          ↓
-        </Button>
-        <Button
-          onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'left')}
-          disabled={selectedBlock === null}
-          size="sm"
-        >
-          ←
-        </Button>
-        <Button
-          onClick={() => selectedBlock !== null && moveBlock(selectedBlock, 'right')}
-          disabled={selectedBlock === null}
-          size="sm"
-        >
-          →
-        </Button>
-      </div>
-
-      <div className="text-sm text-gray-600 text-center max-w-md">
-        <p><strong>How to play:</strong> Click a block to select it, then use arrow buttons or keyboard arrows to move.</p>
-        <p>Move the red car to the exit on the right!</p>
-      </div>
-    </div>
+      <style>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x { background-size: 200% 200%; animation: gradient-x 5s ease infinite; }
+      `}</style>
+    </motion.div>
   );
 };

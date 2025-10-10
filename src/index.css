@@ -52,3 +52,86 @@ code {
     @apply bg-background text-foreground;
   }
 }
+
+/* Sonner Toast Custom Styles */
+.sonner-toast {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(133, 88, 237, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+  min-height: 48px !important;
+  max-height: 60px !important;
+}
+
+/* Default purple gradient for all toasts */
+[data-sonner-toast] {
+  background: linear-gradient(135deg, #8558ed 0%, #b18aff 100%) !important;
+  color: white !important;
+  border: 2px solid #8558ed !important;
+}
+
+/* Warning toasts - lighter purple */
+[data-sonner-toast][data-type="warning"] {
+  background: linear-gradient(135deg, #9b6dff 0%, #c9a9ff 100%) !important;
+  color: white !important;
+  border: 2px solid #9b6dff !important;
+}
+
+/* Error/Termination toasts - RED ONLY */
+[data-sonner-toast][data-type="error"] {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border: 2px solid #dc2626 !important;
+}
+
+/* Success toasts - purple with green accent */
+[data-sonner-toast][data-type="success"] {
+  background: linear-gradient(135deg, #7347d6 0%, #a179f0 100%) !important;
+  color: white !important;
+  border: 2px solid #7347d6 !important;
+}
+
+/* Info toasts - lighter purple */
+[data-sonner-toast][data-type="info"] {
+  background: linear-gradient(135deg, #b18aff 0%, #d4c5ff 100%) !important;
+  color: white !important;
+  border: 2px solid #b18aff !important;
+}
+
+[data-sonner-toast] [data-icon] {
+  font-size: 20px !important;
+  min-width: 20px !important;
+}
+
+[data-sonner-toast] [data-content] {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  border-radius: 6px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-sonner-toast] [data-button] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  border-radius: 6px !important;
+  padding: 4px 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}

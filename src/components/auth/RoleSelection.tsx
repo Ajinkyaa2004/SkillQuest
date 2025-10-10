@@ -4,6 +4,7 @@ import { UserCircle, Shield, Briefcase, Users, Sparkles } from 'lucide-react';
 import { UserRole } from '@/types';
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Rocket, ArrowDown, Zap } from 'lucide-react';
+import { toast } from 'sonner';
 
 
 
@@ -198,7 +199,10 @@ export const RoleSelection: React.FC = () => {
 
   const handleRoleSelect = (role: UserRole, available: boolean) => {
     if (!available) {
-      alert('This role is not available in the MVP version.');
+      toast.error('This role is not available in the MVP version.', {
+        duration: 4000,
+        icon: '🔒',
+      });
       return;
     }
     setLoading(true);

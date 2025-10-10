@@ -35,6 +35,8 @@ export interface GameScore {
   minimumMoves?: number;
   completedAt: string;
   trialCompleted: boolean;
+  failed?: boolean; // true if disqualified or failed
+  failureReason?: string;
 }
 
 export interface Assessment {

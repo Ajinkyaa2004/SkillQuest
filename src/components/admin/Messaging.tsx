@@ -7,6 +7,7 @@ import { getProfiles, saveMessage } from '@/lib/storage';
 import { ApplicantProfile, MESSAGE_TEMPLATES } from '@/types';
 import { ArrowLeft, Mail, MessageSquare, Send } from 'lucide-react';
 import { generateId } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export const Messaging: React.FC = () => {
   const { user } = useAuth();
@@ -55,7 +56,10 @@ export const Messaging: React.FC = () => {
 
   const sendMessages = async () => {
     if (selectedChannels.size === 0) {
-      alert('Please select at least one communication channel.');
+      toast.error('Please select at least one communication channel.', {
+        duration: 4000,
+        icon: '📨',
+      });
       return;
     }
 
@@ -77,7 +81,10 @@ export const Messaging: React.FC = () => {
     });
 
     setSending(false);
-    alert(`Messages sent successfully to ${candidates.length} candidate(s) via ${Array.from(selectedChannels).join(', ')}!`);
+    toast.success(`Messages sent successfully to ${candidates.length} candidate(s) via ${Array.from(selectedChannels).join(', ')}!`, {
+      duration: 5000,
+      icon: '✅',
+    });
     navigate('/admin/dashboard');
   };
 
