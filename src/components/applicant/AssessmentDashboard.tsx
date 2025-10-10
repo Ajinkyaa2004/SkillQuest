@@ -537,8 +537,8 @@ export const AssessmentDashboard: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button onClick={viewResults} className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0]">
+                  <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                    <Button onClick={viewResults} className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white font-semibold py-6 rounded-lg shadow-lg shadow-[#8558ed]/30 transition-all duration-300 hover:shadow-xl hover:shadow-[#8558ed]/40">
                       <Trophy className="w-4 h-4 mr-2" />
                       View Results
                     </Button>

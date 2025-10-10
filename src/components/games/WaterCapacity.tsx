@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Droplet as DropletIcon } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Flame, Droplet, Droplets, ArrowRightLeft, CheckCircle2, MousePointer } from 'lucide-react';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -225,9 +225,10 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
       >
         <motion.h1
           className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] 
-           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2"
+           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2 flex items-center justify-center gap-3"
         >
-          💧 Water Capacity Quest
+          <Droplets className="w-12 h-12 text-[#8558ed]" />
+          Water Capacity Quest
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -235,7 +236,7 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
           transition={{ delay: 0.4 }}
           className="text-[#8558ed]/80 font-medium flex items-center justify-center gap-2"
         >
-          <DropletIcon className="w-5 h-5" />
+          <Droplet className="w-5 h-5" />
           Measure the exact amount of water!
         </motion.p>
       </motion.div>
@@ -323,17 +324,15 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
               <motion.span
                 animate={{ rotate: [0, 360] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="text-3xl"
               >
-                🎉
+                <Sparkles className="w-8 h-8 text-[#8558ed]" />
               </motion.span>
               <span className="text-2xl font-bold">Puzzle Solved!</span>
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
-                className="text-3xl"
               >
-                ✨
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
               </motion.span>
             </motion.div>
           </motion.div>
@@ -356,19 +355,19 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
             </div>
             <div className="space-y-2 text-sm text-[#030303]/70">
               <p className="flex items-center gap-2">
-                <span className="text-lg">💧</span>
+                <Droplet className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Fill</strong> jugs to their capacity</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">🚰</span>
+                <Droplets className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Empty</strong> jugs completely</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">🔄</span>
+                <ArrowRightLeft className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Pour</strong> water between jugs</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">🎯</span>
+                <Target className="w-5 h-5 text-[#8558ed]" />
                 <span>Reach the <strong>exact target</strong> amount!</span>
               </p>
             </div>
@@ -388,8 +387,9 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
             transition={{ delay: 0.5 }}
             className="text-center mb-6 p-4 bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 rounded-2xl border-2 border-[#8558ed]/20"
           >
-            <p className="text-lg font-bold text-[#030303]">
-              🎯 Goal: Get exactly <span className="text-[#8558ed] text-3xl mx-2">{puzzle.target}L</span> in Jug {puzzle.targetJug + 1}
+            <p className="text-lg font-bold text-[#030303] flex items-center justify-center gap-2">
+              <Target className="w-6 h-6 text-[#8558ed]" />
+              Goal: Get exactly <span className="text-[#8558ed] text-3xl mx-2">{puzzle.target}L</span> in Jug {puzzle.targetJug + 1}
             </p>
           </motion.div>
 
@@ -433,9 +433,10 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
                     <Button
                       onClick={() => fillJug(jug.id)}
                       disabled={jug.current === jug.capacity}
-                      className="w-full bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white disabled:opacity-50"
+                      className="w-full bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      💧 Fill
+                      <Droplet className="w-4 h-4" />
+                      Fill
                     </Button>
                   </motion.div>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -443,9 +444,10 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
                       onClick={() => emptyJug(jug.id)}
                       disabled={jug.current === 0}
                       variant="outline"
-                      className="w-full border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10 disabled:opacity-50"
+                      className="w-full border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      🚰 Empty
+                      <Droplets className="w-4 h-4" />
+                      Empty
                     </Button>
                   </motion.div>
                   {jugs.map((targetJug) =>

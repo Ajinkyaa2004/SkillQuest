@@ -9,8 +9,9 @@ import { formatTime, calculateTotalScore } from '@/lib/utils';
 import { Minesweeper } from '@/components/games/Minesweeper';
 import { UnblockMe } from '@/components/games/UnblockMe';
 import { WaterCapacity } from '@/components/games/WaterCapacity';
-import { AlertTriangle, Maximize, X } from 'lucide-react';
+import { AlertTriangle, Maximize, X, Sparkles, Zap, Clock, Target, Shield, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 const GAME_DURATION = 300; // 5 minutes in seconds
 
@@ -220,39 +221,211 @@ export const GameWrapper: React.FC = () => {
 
   if (!gameStarted && !isTrial) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl">Ready to Start: {getGameTitle()}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md">
-              <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                <div className="text-sm text-yellow-800">
-                  <p className="font-semibold mb-2">Important Assessment Rules:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>This game will run for exactly <strong>5 minutes</strong></li>
-                    <li>You must play in <strong>fullscreen mode</strong></li>
-                    <li>Tab switching is monitored and limited to 2 warnings</li>
-                    <li>Your score is based on puzzles/levels completed</li>
-                    <li>The timer cannot be paused once started</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Animated Background Orbs */}
+        <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.2, 0.3],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute w-96 h-96 bg-[#8558ed]/20 rounded-full blur-3xl top-10 -left-20"
+          />
+          <motion.div
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.2, 0.3, 0.2],
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute w-80 h-80 bg-[#b18aff]/20 rounded-full blur-3xl bottom-10 -right-20"
+          />
+        </div>
 
-            <div className="flex space-x-4">
-              <Button onClick={enterFullscreen} className="flex-1">
-                <Maximize className="w-4 h-4 mr-2" />
-                Enter Fullscreen & Start
-              </Button>
-              <Button onClick={() => navigate('/applicant/assessment')} variant="outline">
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Floating Icons */}
+        <motion.div
+          animate={{
+            y: [0, -20, 0],
+            rotate: [0, 10, 0],
+          }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-20 left-10 pointer-events-none"
+        >
+          <Sparkles className="w-8 h-8 text-[#8558ed]/30" />
+        </motion.div>
+        <motion.div
+          animate={{
+            y: [0, 20, 0],
+            rotate: [0, -10, 0],
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute top-32 right-16 pointer-events-none"
+        >
+          <Zap className="w-10 h-10 text-[#b18aff]/30" />
+        </motion.div>
+        <motion.div
+          animate={{
+            y: [0, -15, 0],
+            rotate: [0, 15, 0],
+          }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute bottom-24 left-20 pointer-events-none"
+        >
+          <Target className="w-7 h-7 text-[#8558ed]/30" />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-3xl"
+        >
+          <Card className="bg-white/80 backdrop-blur-xl border-2 border-[#8558ed]/30 shadow-2xl shadow-[#8558ed]/20">
+            <CardHeader className="text-center pb-4">
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <CardTitle className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] mb-2 flex items-center justify-center gap-3">
+                  <Sparkles className="w-10 h-10 text-[#8558ed]" />
+                  Ready to Start
+                </CardTitle>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-2xl font-bold text-[#8558ed] flex items-center justify-center gap-2"
+                >
+                  <Rocket className="w-6 h-6" />
+                  {getGameTitle()}
+                </motion.p>
+              </motion.div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Rules Section */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="p-6 bg-gradient-to-br from-[#8558ed]/10 to-[#b18aff]/10 border-2 border-[#8558ed]/30 rounded-2xl"
+              >
+                <div className="flex items-start space-x-3">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="bg-gradient-to-tr from-[#8558ed] to-[#b18aff] w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  >
+                    <Shield className="w-5 h-5 text-white" />
+                  </motion.div>
+                  <div className="flex-1">
+                    <p className="font-bold text-lg text-[#8558ed] mb-3">📋 Important Assessment Rules:</p>
+                    <ul className="space-y-3">
+                      <motion.li
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="flex items-start gap-3 text-[#030303]/80"
+                      >
+                        <Clock className="w-5 h-5 text-[#8558ed] mt-0.5 flex-shrink-0" />
+                        <span>This game will run for exactly <strong className="text-[#8558ed]">5 minutes</strong></span>
+                      </motion.li>
+                      <motion.li
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="flex items-start gap-3 text-[#030303]/80"
+                      >
+                        <Maximize className="w-5 h-5 text-[#8558ed] mt-0.5 flex-shrink-0" />
+                        <span>You must play in <strong className="text-[#8558ed]">fullscreen mode</strong></span>
+                      </motion.li>
+                      <motion.li
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="flex items-start gap-3 text-[#030303]/80"
+                      >
+                        <AlertTriangle className="w-5 h-5 text-[#8558ed] mt-0.5 flex-shrink-0" />
+                        <span>Tab switching is monitored and limited to <strong className="text-[#8558ed]">2 warnings</strong></span>
+                      </motion.li>
+                      <motion.li
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                        className="flex items-start gap-3 text-[#030303]/80"
+                      >
+                        <Target className="w-5 h-5 text-[#8558ed] mt-0.5 flex-shrink-0" />
+                        <span>Your score is based on <strong className="text-[#8558ed]">puzzles/levels completed</strong></span>
+                      </motion.li>
+                      <motion.li
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        className="flex items-start gap-3 text-[#030303]/80"
+                      >
+                        <Zap className="w-5 h-5 text-[#8558ed] mt-0.5 flex-shrink-0" />
+                        <span>The timer <strong className="text-[#8558ed]">cannot be paused</strong> once started</span>
+                      </motion.li>
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Buttons */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.9 }}
+                className="flex gap-4"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1"
+                >
+                  <Button
+                    onClick={enterFullscreen}
+                    className="w-full h-14 text-lg font-bold bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white shadow-lg shadow-[#8558ed]/30"
+                  >
+                    <Maximize className="w-5 h-5 mr-2" />
+                    Enter Fullscreen & Start
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    onClick={() => navigate('/applicant/assessment')}
+                    variant="outline"
+                    className="h-14 px-8 text-lg font-bold border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10"
+                  >
+                    <X className="w-5 h-5 mr-2" />
+                    Cancel
+                  </Button>
+                </motion.div>
+              </motion.div>
+
+              {/* Good Luck Message */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="text-center"
+              >
+                <motion.p
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="text-lg font-bold text-[#8558ed] flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Good Luck! You've got this!
+                  <Rocket className="w-5 h-5" />
+                </motion.p>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }

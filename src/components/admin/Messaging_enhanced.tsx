@@ -281,7 +281,7 @@ export const Messaging: React.FC = () => {
                   />
                   <Mail className="w-6 h-6 mr-3 text-[#8558ed]" />
                   <div className="flex-1">
-                    <div className="font-bold text-[#030303]">Email</div>
+                    <div className="font-bold text-[#030303]">📧 Email</div>
                     <div className="text-sm text-[#8558ed]/70">Send via email to {candidates.length} recipients</div>
                   </div>
                   {selectedChannels.has('email') && (
@@ -305,7 +305,7 @@ export const Messaging: React.FC = () => {
                   />
                   <MessageSquare className="w-6 h-6 mr-3 text-green-600" />
                   <div className="flex-1">
-                    <div className="font-bold text-[#030303]">WhatsApp</div>
+                    <div className="font-bold text-[#030303]">💬 WhatsApp</div>
                     <div className="text-sm text-green-700/70">Send via WhatsApp (simulated)</div>
                   </div>
                   {selectedChannels.has('whatsapp') && (
@@ -329,7 +329,7 @@ export const Messaging: React.FC = () => {
                   />
                   <Send className="w-6 h-6 mr-3 text-blue-500" />
                   <div className="flex-1">
-                    <div className="font-bold text-[#030303]">Telegram</div>
+                    <div className="font-bold text-[#030303]">✈️ Telegram</div>
                     <div className="text-sm text-blue-700/70">Send via Telegram to {candidates.length} users</div>
                   </div>
                   {selectedChannels.has('telegram') && (
@@ -365,7 +365,7 @@ export const Messaging: React.FC = () => {
                   >
                     <div className="text-xs font-bold text-[#8558ed] mb-3 flex items-center gap-2">
                       <Mail className="w-4 h-4" />
-                      EMAIL
+                      📧 EMAIL
                     </div>
                     <div className="text-sm text-[#030303] leading-relaxed whitespace-pre-wrap">{getPreviewMessage('email')}</div>
                   </motion.div>
@@ -379,7 +379,7 @@ export const Messaging: React.FC = () => {
                   >
                     <div className="text-xs font-bold text-green-700 mb-3 flex items-center gap-2">
                       <MessageSquare className="w-4 h-4" />
-                      WHATSAPP
+                      💬 WHATSAPP
                     </div>
                     <div className="text-sm text-[#030303] leading-relaxed whitespace-pre-wrap">{getPreviewMessage('whatsapp')}</div>
                   </motion.div>
@@ -393,7 +393,7 @@ export const Messaging: React.FC = () => {
                   >
                     <div className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
                       <Send className="w-4 h-4" />
-                      TELEGRAM
+                      ✈️ TELEGRAM
                     </div>
                     <div className="text-sm text-[#030303] leading-relaxed whitespace-pre-wrap">{getPreviewMessage('telegram')}</div>
                   </motion.div>
@@ -448,7 +448,7 @@ export const Messaging: React.FC = () => {
                       ) : (
                         <>
                           <Send className="w-6 h-6 mr-2" />
-                          Send Messages Now
+                          Send Messages Now 🚀
                         </>
                       )}
                     </Button>

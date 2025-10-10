@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Car as CarIcon } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Flame, Car, MousePointer, Keyboard, CheckCircle2 } from 'lucide-react';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -241,7 +241,7 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
               className={`w-full h-full ${block.color} ${selectedBlock === block.id ? 'ring-4 ring-white' : ''} cursor-pointer flex items-center justify-center text-white font-bold text-xs`}
               onClick={() => setSelectedBlock(block.id)}
             >
-              {i === 0 && block.isTarget && '🚗'}
+              {i === 0 && block.isTarget && <Car className="w-6 h-6" />}
             </div>
           );
         }
@@ -350,9 +350,10 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
       >
         <motion.h1
           className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] 
-           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2"
+           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2 flex items-center justify-center gap-3"
         >
-          🚗 Unblock Me Quest
+          <Car className="w-12 h-12 text-[#8558ed]" />
+          Unblock Me Quest
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -360,7 +361,7 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
           transition={{ delay: 0.4 }}
           className="text-[#8558ed]/80 font-medium flex items-center justify-center gap-2"
         >
-          <CarIcon className="w-5 h-5" />
+          <Car className="w-5 h-5" />
           Move blocks to free the red car!
         </motion.p>
       </motion.div>
@@ -446,15 +447,15 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
             </div>
             <div className="space-y-2 text-sm text-[#030303]/70">
               <p className="flex items-center gap-2">
-                <span className="text-lg">👆</span>
+                <MousePointer className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Click a block</strong> to select it</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">⌨️</span>
+                <Keyboard className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Use arrow keys</strong> or buttons to move</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">🚗</span>
+                <Car className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Move the red car</strong> to the exit!</span>
               </p>
             </div>

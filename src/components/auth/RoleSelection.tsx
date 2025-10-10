@@ -248,13 +248,13 @@ export const RoleSelection: React.FC = () => {
           </h1>
 
           <p className="text-lg font-medium text-[#8558ed]/90 mt-2 flex items-center justify-center gap-2">
-  Choose your journey and let SkillQuest guide you <Rocket className="w-5 h-5 text-[#8558ed]" />
-</p>
+            Choose your journey and let SkillQuest guide you <Rocket className="w-5 h-5 text-[#8558ed]" />
+          </p>
 
 
-<p className="text-lg text-[#030303]/80 mt-2 flex items-center justify-center gap-2">
-  Select your role to continue <ArrowDown className="w-5 h-5 text-[#030303]/70" />
-</p>
+          <p className="text-lg text-[#030303]/80 mt-2 flex items-center justify-center gap-2">
+            Select your role to continue <ArrowDown className="w-5 h-5 text-[#030303]/70" />
+          </p>
 
         </div>
 
@@ -361,8 +361,8 @@ export const RoleSelection: React.FC = () => {
                               : {}
                           }
                           className={`mt-4 w-full rounded-lg py-2 font-medium text-[#f3f0fc] ${role.available
-                              ? "bg-[#8558ed] hover:bg-[#b18aff]"
-                              : "border border-[#b18aff] text-[#b18aff] cursor-not-allowed bg-transparent"
+                            ? "bg-[#8558ed] hover:bg-[#b18aff]"
+                            : "border border-[#b18aff] text-[#b18aff] cursor-not-allowed bg-transparent"
                             }`}
                         >
                           {role.available ? "Continue →" : "Coming Soon"}
@@ -379,23 +379,23 @@ export const RoleSelection: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-20 text-[#030303]/70 text-sm flex items-center justify-center space-x-2">
-  <motion.div
-  
-    initial={{ y: 0 }}
-    animate={{ y: [0, -3, 0] }}
-    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-  >
-    <Zap className="w-5 h-5 text-[#8558ed]" />
-  </motion.div>
-  <motion.p
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 1.5 }}
-    className="font-medium"
-  >
-    Hack. Build. Conquer. – Together
-  </motion.p>
-</div>
+          <motion.div
+
+            initial={{ y: 0 }}
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Zap className="w-5 h-5 text-[#8558ed]" />
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+            className="font-medium"
+          >
+            Hack. Build. Conquer. – Together
+          </motion.p>
+        </div>
 
       </div>
 

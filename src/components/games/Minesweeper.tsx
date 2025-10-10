@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Flag, Bomb, Trophy, Sparkles, Zap, Star, Target, Flame } from 'lucide-react';
+import { Target, Flame, Sparkles, RotateCcw, Flag, CheckCircle2, AlertCircle, MousePointer, Bomb, Zap, Star, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { GameScore } from '@/types';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
 import { useNavigate } from 'react-router-dom';
 
@@ -296,9 +297,10 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
       >
         <motion.h1
           className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] 
-           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2"
+           animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight mb-2 flex items-center justify-center gap-3"
         >
-          💣 Minesweeper Quest
+          <Target className="w-12 h-12 text-[#8558ed]" />
+          Minesweeper Quest
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -394,17 +396,15 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
               <motion.span
                 animate={{ rotate: [0, 360] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="text-3xl"
               >
-                🎉
+                <Sparkles className="w-8 h-8 text-[#8558ed]" />
               </motion.span>
               <span className="text-2xl font-bold">Level Complete!</span>
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
-                className="text-3xl"
               >
-                ✨
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
               </motion.span>
             </motion.div>
           </motion.div>
@@ -429,9 +429,8 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
               <motion.span
                 animate={{ rotate: [0, 20, -20, 0] }}
                 transition={{ duration: 0.5, repeat: 2 }}
-                className="text-3xl"
               >
-                💥
+                <AlertCircle className="w-8 h-8 text-red-500" />
               </motion.span>
               <span className="text-2xl font-bold">Mine Hit! Restarting...</span>
             </motion.div>
@@ -455,15 +454,15 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
             </div>
             <div className="space-y-2 text-sm text-[#030303]/70">
               <p className="flex items-center gap-2">
-                <span className="text-lg">👆</span>
+                <MousePointer className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Left-click</strong> to reveal cells</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">🚩</span>
+                <Flag className="w-5 h-5 text-[#8558ed]" />
                 <span><strong>Right-click</strong> to flag mines</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="text-lg">🎯</span>
+                <Target className="w-5 h-5 text-[#8558ed]" />
                 <span>Clear all safe cells to win!</span>
               </p>
             </div>
