@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Flame, Car, MousePointer, Keyboard, CheckCircle2 } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Flame, Car, MousePointer, Keyboard, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +25,184 @@ const GRID_SIZE = 6;
 const TARGET_ROW = 2;
 const TARGET_EXIT_COL = 5;
 
+// Pre-defined puzzles to ensure they are all solvable and properly designed
+const PREDEFINED_PUZZLES: Block[][] = [
+  // Level 1 - Very Easy
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 2, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 4, col: 1, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+  ],
+  // Level 2 - Easy
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 4, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+  ],
+  // Level 3 - Easy
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 1, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 4, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+  ],
+  // Level 4 - Easy
+  [
+    { id: 0, row: 2, col: 2, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 2, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+  ],
+  // Level 5 - Medium
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 3, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 1, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+  ],
+  // Level 6 - Medium
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 1, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 3, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 4, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+  ],
+  // Level 7 - Medium
+  [
+    { id: 0, row: 2, col: 2, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 1, col: 5, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+  ],
+  // Level 8 - Challenging
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 0, length: 3, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 1, col: 3, length: 3, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 0, length: 3, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 4, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-pink-500' },
+    { id: 6, row: 0, col: 4, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-indigo-500' },
+  ],
+  // Level 9 - Challenging
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 2, length: 3, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 1, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 0, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 3, length: 3, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 4, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-pink-500' },
+    { id: 6, row: 3, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-indigo-500' },
+    { id: 7, row: 0, col: 5, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-orange-500' },
+  ],
+  // Level 10 - Challenging
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 1, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 0, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 1, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+    { id: 6, row: 3, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-indigo-500' },
+    { id: 7, row: 4, col: 4, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-orange-500' },
+  ],
+  // Level 11 - Medium
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 2, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 0, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 5, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 12 - Medium
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 1, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 1, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 1, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 4, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 13 - Medium
+  [
+    { id: 0, row: 2, col: 2, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 1, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 3, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 14 - Medium
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 2, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 5, col: 4, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 15 - Medium
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 1, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 3, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 16 - Medium
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 2, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 4, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 17 - Medium
+  [
+    { id: 0, row: 2, col: 2, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 0, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 4, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 18 - Medium
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 0, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 3, col: 1, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 4, col: 3, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 19 - Medium
+  [
+    { id: 0, row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 0, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 1, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 2, col: 3, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+  ],
+  // Level 20 - Medium
+  [
+    { id: 0, row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: 'bg-red-500' },
+    { id: 1, row: 0, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-blue-500' },
+    { id: 2, row: 1, col: 1, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-green-500' },
+    { id: 3, row: 0, col: 2, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-yellow-500' },
+    { id: 4, row: 1, col: 4, length: 2, orientation: 'vertical', isTarget: false, color: 'bg-purple-500' },
+    { id: 5, row: 3, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: 'bg-pink-500' },
+  ],
+];
+
 export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining, isTrialMode = false }) => {
   const navigate = useNavigate();
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -33,6 +211,7 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
   const [level, setLevel] = useState(1);
   const [puzzlesCompleted, setPuzzlesCompleted] = useState(0);
   const [totalMoves, setTotalMoves] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Tab switch detection - only enabled when not in trial mode
   useTabSwitchDetection({
@@ -45,103 +224,30 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
     },
   });
 
-  const generatePuzzle = useCallback((difficulty: number): Block[] => {
-    const newBlocks: Block[] = [];
-    const grid: boolean[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
-
-    // Add target block (red car)
-    const targetBlock: Block = {
-      id: 0,
-      row: TARGET_ROW,
-      col: 0,
-      length: 2,
-      orientation: 'horizontal',
-      isTarget: true,
-      color: 'bg-red-500',
-    };
-    newBlocks.push(targetBlock);
-    for (let i = 0; i < targetBlock.length; i++) {
-      grid[targetBlock.row][targetBlock.col + i] = true;
-    }
-
-    // Add blocking blocks
-    const blockCount = Math.min(5 + difficulty, 12);
-    const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500'];
-    
-    for (let i = 1; i < blockCount; i++) {
-      let placed = false;
-      let attempts = 0;
-      
-      while (!placed && attempts < 50) {
-        const orientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-        const length = Math.random() > 0.5 ? 2 : 3;
-        const row = Math.floor(Math.random() * GRID_SIZE);
-        const col = Math.floor(Math.random() * GRID_SIZE);
-
-        // Check if block can be placed
-        let canPlace = true;
-        if (orientation === 'horizontal') {
-          if (col + length > GRID_SIZE) canPlace = false;
-          else {
-            for (let j = 0; j < length; j++) {
-              if (grid[row][col + j]) {
-                canPlace = false;
-                break;
-              }
-            }
-          }
-        } else {
-          if (row + length > GRID_SIZE) canPlace = false;
-          else {
-            for (let j = 0; j < length; j++) {
-              if (grid[row + j][col]) {
-                canPlace = false;
-                break;
-              }
-            }
-          }
-        }
-
-        if (canPlace) {
-          const block: Block = {
-            id: i,
-            row,
-            col,
-            length,
-            orientation,
-            isTarget: false,
-            color: colors[i % colors.length],
-          };
-          newBlocks.push(block);
-          
-          if (orientation === 'horizontal') {
-            for (let j = 0; j < length; j++) {
-              grid[row][col + j] = true;
-            }
-          } else {
-            for (let j = 0; j < length; j++) {
-              grid[row + j][col] = true;
-            }
-          }
-          placed = true;
-        }
-        attempts++;
-      }
-    }
-
-    return newBlocks;
-  }, []);
+  const generatePuzzle = useCallback((levelNum: number): Block[] => {
+    // Use pre-defined puzzles, cycling through them
+    const puzzleIndex = (levelNum + refreshKey) % PREDEFINED_PUZZLES.length;
+    // Deep clone the puzzle to avoid mutations
+    return JSON.parse(JSON.stringify(PREDEFINED_PUZZLES[puzzleIndex]));
+  }, [refreshKey]);
 
   useEffect(() => {
     setBlocks(generatePuzzle(level - 1));
     setMoves(0);
-  }, [level, generatePuzzle]);
+    setSelectedBlock(null);
+  }, [level, generatePuzzle, refreshKey]);
 
   useEffect(() => {
     if (timeRemaining === 0 && !isTrialMode) {
       onComplete(puzzlesCompleted, totalMoves);
     }
   }, [timeRemaining, puzzlesCompleted, totalMoves, onComplete, isTrialMode]);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    setMoves(0);
+    setSelectedBlock(null);
+  };
 
   const canMoveBlock = (block: Block, newRow: number, newCol: number): boolean => {
     const grid: boolean[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
@@ -491,6 +597,24 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
                 ))
               )}
             </div>
+          </motion.div>
+
+          {/* Refresh Button */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.45 }}
+            className="flex justify-center mb-4"
+          >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={handleRefresh}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 font-semibold"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Refresh Puzzle
+              </Button>
+            </motion.div>
           </motion.div>
 
           {/* Control Buttons */}
