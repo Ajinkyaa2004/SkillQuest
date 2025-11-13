@@ -8,7 +8,6 @@ import { AssessmentDashboard } from '@/components/applicant/AssessmentDashboard'
 import { GameWrapper } from '@/components/applicant/GameWrapper';
 import { Results } from '@/components/applicant/Results';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { Messaging } from '@/components/admin/Messaging';
 import { Chatbot } from '@/components/chatbot/Chatbot';
 import { ToastDemo } from '@/components/demo/ToastDemo';
 import { Toaster } from 'sonner';
@@ -79,14 +78,6 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/messaging"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Messaging />
             </ProtectedRoute>
           }
         />

@@ -9,46 +9,9 @@ import { ApplicantProfile, LOCATIONS, ROLES } from '@/types';
 import { saveProfile, getProfileByUserId } from '@/lib/storage';
 import { generateCandidateId } from '@/lib/utils';
 import { toast } from 'sonner';
-import { LogOut, Sparkles, Target, Zap, Star, Flame, Trophy, Link2, Globe, User, Mail, Phone, MessageCircle, GraduationCap, Award, MapPin, Briefcase, Code, Palette, TrendingUp, Users, Megaphone, Heart, MoreHorizontal } from 'lucide-react';
+import { LogOut, Sparkles, Target, Zap, Star, Flame, Trophy, Link2, Globe, User, Mail, Phone, GraduationCap, Award, MapPin, Briefcase, Code, Palette, TrendingUp, Users, Megaphone, Heart, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Confetti component
-const Confetti: React.FC = () => {
-  const confettiPieces = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    animationDelay: Math.random() * 3,
-    backgroundColor: ['#8558ed', '#b18aff', '#7347d6', '#a179f0', '#9b6dff'][Math.floor(Math.random() * 5)],
-  }));
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {confettiPieces.map((piece) => (
-        <motion.div
-          key={piece.id}
-          initial={{ y: -20, x: `${piece.left}vw`, rotate: 0, opacity: 1 }}
-          animate={{
-            y: '100vh',
-            rotate: 360,
-            opacity: 0,
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            delay: piece.animationDelay,
-            ease: 'easeIn',
-          }}
-          style={{
-            position: 'absolute',
-            width: '10px',
-            height: '10px',
-            backgroundColor: piece.backgroundColor,
-          }}
-          className="rounded-full"
-        />
-      ))}
-    </div>
-  );
-};
 
 // Floating icon component
 const FloatingIcon: React.FC<{ Icon: React.ElementType; delay: number; x: string; y: string; color: string }> = ({ Icon, delay, x, y, color }) => (
@@ -93,7 +56,7 @@ export const ProfileForm: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [profile, setProfile] = useState<Partial<ApplicantProfile>>({
     name: '',
     email: user?.email || '',
@@ -102,7 +65,6 @@ export const ProfileForm: React.FC = () => {
     cgpa: '',
     location: '',
     interestedRoles: [],
-    telegramId: '',
     resumeLink: '',
     websiteLink: '',
   });
@@ -112,7 +74,6 @@ export const ProfileForm: React.FC = () => {
     const fields = [
       profile.name,
       profile.phone,
-      profile.telegramId,
       profile.collegeName,
       profile.cgpa,
       profile.location,
@@ -158,15 +119,14 @@ export const ProfileForm: React.FC = () => {
         cgpa: profile.cgpa!,
         location: profile.location!,
         interestedRoles: profile.interestedRoles!,
-        telegramId: profile.telegramId!,
         profileCompleted: true,
         createdAt: new Date().toISOString(),
       };
 
       saveProfile(completeProfile);
       
-      // Show confetti celebration
-      setShowConfetti(true);
+      // Show success message
+      setShowSuccess(true);
       setTimeout(() => {
         navigate('/applicant/assessment');
       }, 2000);
@@ -200,18 +160,78 @@ export const ProfileForm: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] p-4 relative overflow-hidden"
+      className="min-h-screen playful-gradient p-4 relative overflow-hidden"
     >
-      {/* Floating background icons */}
-      <FloatingIcon Icon={Sparkles} delay={0} x="10%" y="15%" color="text-[#8558ed]" />
-      <FloatingIcon Icon={Target} delay={1} x="85%" y="20%" color="text-[#b18aff]" />
-      <FloatingIcon Icon={Zap} delay={2} x="15%" y="70%" color="text-[#8558ed]" />
-      <FloatingIcon Icon={Star} delay={3} x="90%" y="75%" color="text-[#b18aff]" />
-      <FloatingIcon Icon={Flame} delay={4} x="50%" y="10%" color="text-[#8558ed]" />
-      <FloatingIcon Icon={Trophy} delay={5} x="20%" y="85%" color="text-[#b18aff]" />
+      {/* Floating Background Orbs */}
+      <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute w-96 h-96 bg-gradient-to-br from-game-purple-400/30 to-blue-400/20 rounded-full blur-3xl top-10 -left-20"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute w-80 h-80 bg-gradient-to-br from-orange-400/20 to-game-purple-400/30 rounded-full blur-3xl bottom-10 -right-20"
+        />
+      </div>
       
-      {/* Confetti animation */}
-      {showConfetti && <Confetti />}
+      {/* Floating background icons */}
+      <FloatingIcon Icon={Sparkles} delay={0} x="10%" y="15%" color="text-game-purple-500" />
+      <FloatingIcon Icon={Target} delay={1} x="85%" y="20%" color="text-orange-500" />
+      <FloatingIcon Icon={Zap} delay={2} x="15%" y="70%" color="text-blue-500" />
+      <FloatingIcon Icon={Star} delay={3} x="90%" y="75%" color="text-game-purple-400" />
+      <FloatingIcon Icon={Flame} delay={4} x="50%" y="10%" color="text-orange-400" />
+      <FloatingIcon Icon={Trophy} delay={5} x="20%" y="85%" color="text-blue-400" />
+      
+      {/* Success Animation */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-game-purple-500/20 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0.9, rotate: 180 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              className="bg-white rounded-2xl p-8 shadow-2xl shadow-game-purple-500/30 text-center max-w-md mx-4"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 15 }}
+                className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">Profile Completed! 🎉</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Excellent! Your profile has been saved successfully. 
+                  <br />
+                  <span className="font-medium text-game-purple-700">Redirecting to assessment...</span>
+                </p>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <div className="max-w-3xl mx-auto py-8 relative z-10">
         <motion.div 
@@ -221,8 +241,8 @@ export const ProfileForm: React.FC = () => {
           className="flex justify-between items-center mb-6"
         >
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] bg-clip-text text-transparent">
-              Complete Your Profile
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-game-purple-700 via-game-purple-500 to-game-purple-400 bg-clip-text text-transparent drop-shadow-lg">
+              Complete Your IFA Profile
             </h1>
             <p className="text-gray-600 mt-2">
               Please fill in all the details before proceeding to the assessment
@@ -243,11 +263,11 @@ export const ProfileForm: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.25 }}
           className="mb-6"
         >
-          <Card className="bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 border-2 border-[#8558ed]/20">
+          <Card className="bg-gradient-to-r from-game-purple-500/10 via-blue-500/5 to-orange-500/10 border-2 border-game-purple-500/20 shadow-lg shadow-game-purple-500/10">
             <CardContent className="py-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-[#8558ed]">Profile Completion</span>
-                <span className="text-2xl font-bold bg-gradient-to-r from-[#8558ed] to-[#b18aff] bg-clip-text text-transparent">
+                <span className="text-sm font-semibold text-game-purple-700">Profile Completion</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-game-purple-700 to-game-purple-400 bg-clip-text text-transparent">
                   {progress}%
                 </span>
               </div>
@@ -256,7 +276,7 @@ export const ProfileForm: React.FC = () => {
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] rounded-full relative"
+                  className="h-full bg-gradient-to-r from-game-purple-700 via-game-purple-500 to-game-purple-400 rounded-full relative"
                 >
                   <motion.div
                     animate={{
@@ -280,9 +300,13 @@ export const ProfileForm: React.FC = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <Card className="border-2 border-[#8558ed]/20 bg-white/90 backdrop-blur-xl shadow-2xl shadow-[#8558ed]/10">
+          <Card className="relative border-0 bg-white/95 backdrop-blur-xl shadow-2xl shadow-game-purple-500/20 overflow-hidden">
+            {/* Gradient border effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-game-purple-500/20 via-blue-500/20 to-orange-500/20 rounded-xl blur-sm -z-10"></div>
+            <div className="absolute inset-[1px] bg-white/95 backdrop-blur-xl rounded-xl"></div>
+            <div className="relative">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#8558ed]">Applicant Information</CardTitle>
+              <CardTitle className="text-2xl bg-gradient-to-r from-game-purple-700 to-game-purple-500 bg-clip-text text-transparent">Applicant Information</CardTitle>
               <CardDescription>
                 All fields marked with * are required. Your Candidate ID will be generated automatically.
               </CardDescription>
@@ -296,27 +320,27 @@ export const ProfileForm: React.FC = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="space-y-4"
               >
-                <h3 className="text-lg font-semibold text-[#8558ed] flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
                   <User className="w-5 h-5" />
                   Personal Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-[#8558ed]" />
+                      <User className="w-4 h-4 text-game-purple-600" />
                       Full Name *
                     </Label>
                     <Input
                       id="name"
                       value={profile.name}
                       onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
+                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-[#8558ed]" />
+                      <Mail className="w-4 h-4 text-game-purple-600" />
                       Email *
                     </Label>
                     <Input
@@ -329,7 +353,7 @@ export const ProfileForm: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-[#8558ed]" />
+                      <Phone className="w-4 h-4 text-game-purple-600" />
                       Phone Number *
                     </Label>
                     <Input
@@ -337,21 +361,7 @@ export const ProfileForm: React.FC = () => {
                       type="tel"
                       value={profile.phone}
                       onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="telegram" className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4 text-[#8558ed]" />
-                      Telegram ID *
-                    </Label>
-                    <Input
-                      id="telegram"
-                      value={profile.telegramId}
-                      onChange={(e) => setProfile({ ...profile, telegramId: e.target.value })}
-                      placeholder="@username"
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
+                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
                       required
                     />
                   </div>
@@ -365,27 +375,27 @@ export const ProfileForm: React.FC = () => {
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="space-y-4"
               >
-                <h3 className="text-lg font-semibold text-[#8558ed] flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
                   <GraduationCap className="w-5 h-5" />
                   Academic Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="college" className="flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-[#8558ed]" />
+                      <GraduationCap className="w-4 h-4 text-game-purple-600" />
                       College Name *
                     </Label>
                     <Input
                       id="college"
                       value={profile.collegeName}
                       onChange={(e) => setProfile({ ...profile, collegeName: e.target.value })}
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
+                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cgpa" className="flex items-center gap-2">
-                      <Award className="w-4 h-4 text-[#8558ed]" />
+                      <Award className="w-4 h-4 text-game-purple-600" />
                       CGPA/GPA *
                     </Label>
                     <Input
@@ -396,7 +406,7 @@ export const ProfileForm: React.FC = () => {
                       max="10"
                       value={profile.cgpa}
                       onChange={(e) => setProfile({ ...profile, cgpa: e.target.value })}
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
+                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
                       required
                     />
                   </div>
@@ -410,18 +420,18 @@ export const ProfileForm: React.FC = () => {
                 transition={{ duration: 0.5, delay: 0.6 }}
                 className="space-y-4"
               >
-                <h3 className="text-lg font-semibold text-[#8558ed] flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
                   <Briefcase className="w-5 h-5" />
                   Career Intent
                 </h3>
                 <div className="space-y-2">
                   <Label htmlFor="location" className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#8558ed]" />
+                    <MapPin className="w-4 h-4 text-game-purple-600" />
                     Preferred Location *
                   </Label>
                   <select
                     id="location"
-                    className="flex h-10 w-full rounded-md border border-[#8558ed]/20 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8558ed]/20"
+                    className="flex h-10 w-full rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20 px-3 py-2 text-sm"
                     value={profile.location}
                     onChange={(e) => setProfile({ ...profile, location: e.target.value })}
                     required
@@ -436,7 +446,7 @@ export const ProfileForm: React.FC = () => {
                 </div>
                 <div className="space-y-3">
                   <Label className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-[#8558ed]" />
+                    <Briefcase className="w-4 h-4 text-game-purple-600" />
                     Interested Roles * (Select at least one)
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -450,8 +460,8 @@ export const ProfileForm: React.FC = () => {
                           whileTap={{ scale: 0.98 }}
                           className={`flex items-center space-x-2 p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                             isSelected
-                              ? 'border-[#8558ed] bg-gradient-to-br from-[#8558ed]/10 to-[#b18aff]/10 shadow-md'
-                              : 'border-gray-200 hover:border-[#8558ed]/50 hover:shadow-sm'
+                              ? 'border-game-purple-500 bg-gradient-to-br from-game-purple-500/10 to-game-purple-400/10 shadow-md'
+                              : 'border-gray-200 hover:border-game-purple-500/50 hover:shadow-sm'
                           }`}
                         >
                           <input
@@ -460,8 +470,8 @@ export const ProfileForm: React.FC = () => {
                             onChange={() => handleRoleToggle(role)}
                             className="hidden"
                           />
-                          <RoleIcon className={`w-5 h-5 ${isSelected ? 'text-[#8558ed]' : 'text-gray-400'}`} />
-                          <span className={`text-sm font-medium ${isSelected ? 'text-[#8558ed]' : 'text-gray-700'}`}>
+                          <RoleIcon className={`w-5 h-5 ${isSelected ? 'text-game-purple-600' : 'text-gray-400'}`} />
+                          <span className={`text-sm font-medium ${isSelected ? 'text-game-purple-700' : 'text-gray-700'}`}>
                             {role}
                           </span>
                         </motion.label>
@@ -473,14 +483,14 @@ export const ProfileForm: React.FC = () => {
 
               {/* Resume & Website Links */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[#8558ed] flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
                   <Link2 className="w-5 h-5" />
                   Links & Portfolio
                 </h3>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="resumeLink" className="flex items-center gap-2">
-                      <Link2 className="w-4 h-4 text-[#8558ed]" />
+                      <Link2 className="w-4 h-4 text-game-purple-600" />
                       Resume Link (Google Drive, Dropbox, etc.)
                     </Label>
                     <Input
@@ -489,7 +499,7 @@ export const ProfileForm: React.FC = () => {
                       value={profile.resumeLink}
                       onChange={(e) => setProfile({ ...profile, resumeLink: e.target.value })}
                       placeholder="https://drive.google.com/..."
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
+                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
                     />
                     <p className="text-xs text-gray-500">
                       Share a public link to your resume (PDF format recommended)
@@ -497,7 +507,7 @@ export const ProfileForm: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="websiteLink" className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-[#8558ed]" />
+                      <Globe className="w-4 h-4 text-game-purple-600" />
                       Website/Portfolio Link (Optional)
                     </Label>
                     <Input
@@ -506,7 +516,7 @@ export const ProfileForm: React.FC = () => {
                       value={profile.websiteLink}
                       onChange={(e) => setProfile({ ...profile, websiteLink: e.target.value })}
                       placeholder="https://yourportfolio.com"
-                      className="border-[#8558ed]/20 focus:border-[#8558ed] focus:ring-[#8558ed]/20"
+                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
                     />
                     <p className="text-xs text-gray-500">
                       Share your portfolio, GitHub, LinkedIn, or personal website
@@ -527,7 +537,7 @@ export const ProfileForm: React.FC = () => {
                       });
                       setTimeout(() => logout(), 500);
                     }}
-                    className="border-2 border-[#8558ed]/30"
+                    className="border-2 border-game-purple-500/30 text-game-purple-700 hover:bg-game-purple-50"
                   >
                     Save & Logout
                   </Button>
@@ -536,7 +546,7 @@ export const ProfileForm: React.FC = () => {
                   <Button
                     type="submit"
                     disabled={loading || !profile.interestedRoles?.length}
-                    className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0]"
+                    className="bg-gradient-to-r from-game-purple-700 via-game-purple-600 to-game-purple-500 hover:from-game-purple-800 hover:via-game-purple-700 hover:to-game-purple-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-game-purple-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-game-purple-500/40"
                   >
                     {loading ? 'Saving...' : 'Continue to Assessment'}
                   </Button>
@@ -544,6 +554,7 @@ export const ProfileForm: React.FC = () => {
               </div>
             </form>
           </CardContent>
+          </div>
         </Card>
         </motion.div>
       </div>
