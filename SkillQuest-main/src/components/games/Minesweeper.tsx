@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Target, Flame, Sparkles, RotateCcw, Flag, CheckCircle2, AlertCircle, MousePointer, Bomb, Zap, Star, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { GameScore } from '@/types';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,6 +18,16 @@ interface MinesweeperProps {
   isTrialMode?: boolean;
 }
 
+type MineMode = 'veryFew' | 'few' | 'normal' | 'many' | 'full';
+
+const mineModeLabels: Record<MineMode, string> = {
+  veryFew: 'Very Few Mines (5)',
+  few: 'Few Mines (10)',
+  normal: 'Normal Mines',
+  many: 'Many Mines',
+  full: 'Full Mines (1 Safe)',
+};
+
 export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemaining, isTrialMode = false }) => {
   const navigate = useNavigate();
   const [grid, setGrid] = useState<Cell[][]>([]);
@@ -29,6 +38,7 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
   const [puzzlesCompleted, setPuzzlesCompleted] = useState(0);
   const [gridSize, setGridSize] = useState(8);
   const [mineCount, setMineCount] = useState(10);
+  const [mineMode, setMineMode] = useState<MineMode>('normal');
 
   // Tab switch detection - only enabled when not in trial mode
   useTabSwitchDetection({
@@ -40,6 +50,23 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
       navigate('/applicant/assessment');
     },
   });
+
+  const calculateMineCount = useCallback((mode: MineMode, size: number, currentLevel: number) => {
+    const maxMines = size * size - 1;
+    switch (mode) {
+      case 'veryFew':
+        return Math.min(5, maxMines);
+      case 'few':
+        return Math.min(10, maxMines);
+      case 'many':
+        return Math.min(Math.floor(size * size * 0.35), maxMines);
+      case 'full':
+        return maxMines;
+      case 'normal':
+      default:
+        return Math.min(Math.floor(size * size * 0.15) + (currentLevel - 1) * 2, maxMines);
+    }
+  }, []);
 
   const initializeGrid = useCallback((size: number, mines: number) => {
     const newGrid: Cell[][] = Array(size).fill(null).map(() =>
@@ -53,9 +80,20 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
 
     // Place mines randomly
     let placedMines = 0;
+    const totalCells = size * size;
+    let safeCellIndex = -1;
+
+    if (mineMode === 'full') {
+      safeCellIndex = Math.floor(Math.random() * totalCells);
+    }
+
     while (placedMines < mines) {
-      const row = Math.floor(Math.random() * size);
-      const col = Math.floor(Math.random() * size);
+      const index = Math.floor(Math.random() * totalCells);
+      if (index === safeCellIndex) continue;
+
+      const row = Math.floor(index / size);
+      const col = index % size;
+
       if (!newGrid[row][col].isMine) {
         newGrid[row][col].isMine = true;
         placedMines++;
@@ -86,10 +124,17 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
     }
 
     return newGrid;
-  }, []);
+  }, [mineMode]);
+
+  useEffect(() => {
+    const count = calculateMineCount(mineMode, gridSize, level);
+    setMineCount(count);
+  }, [gridSize, mineMode, level, calculateMineCount]);
 
   useEffect(() => {
     setGrid(initializeGrid(gridSize, mineCount));
+    setGameOver(false);
+    setWon(false);
   }, [gridSize, mineCount, initializeGrid]);
 
   useEffect(() => {
@@ -159,9 +204,6 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
         // Increase difficulty
         if (newLevel % 3 === 0 && gridSize < 12) {
           setGridSize(prev => prev + 1);
-          setMineCount(prev => prev + 3);
-        } else {
-          setMineCount(prev => prev + 2);
         }
       }, 1500);
     }
@@ -376,6 +418,29 @@ export const Minesweeper: React.FC<MinesweeperProps> = ({ onComplete, timeRemain
             </div>
           </div>
         </motion.div>
+      </motion.div>
+
+      {/* Mine Mode Selection */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.35 }}
+        className="mb-6 flex gap-4 justify-center flex-wrap"
+      >
+        {(['veryFew', 'few', 'normal', 'many', 'full'] as MineMode[]).map((mode) => (
+          <Button
+            key={mode}
+            variant={mineMode === mode ? 'default' : 'outline'}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 ${
+              mineMode === mode
+                ? 'shadow-lg shadow-[#8558ed]/30 bg-gradient-to-r from-[#8558ed] to-[#b18aff] text-white'
+                : 'border-[#8558ed]/40 text-[#8558ed] hover:bg-[#8558ed]/10'
+            }`}
+            onClick={() => setMineMode(mode)}
+          >
+            {mineModeLabels[mode]}
+          </Button>
+        ))}
       </motion.div>
 
       {/* Win Animation */}
