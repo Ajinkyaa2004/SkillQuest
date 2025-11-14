@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfiles, getAssessments, getLeaderboard } from '@/lib/storage';
 import { ApplicantProfile, Assessment, LeaderboardEntry } from '@/types';
-import { Users, Trophy, CheckCircle, Clock, LogOut, Search, Download, Star, Target, TrendingUp, Award } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Users, Trophy, CheckCircle, Clock, LogOut, Search, Download, Star, Target, TrendingUp, Award, Mail, MessageCircle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StatCards } from './StatCards';
 import { DashboardCharts } from './DashboardCharts';
 import { CandidateInsights } from './CandidateInsights';
@@ -21,6 +21,8 @@ export const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'leaderboard' | 'insights'>('overview');
   const [sortBy, setSortBy] = useState<'total' | 'minesweeper' | 'unblockMe' | 'waterCapacity'>('total');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [showMessageOptions, setShowMessageOptions] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -88,6 +90,27 @@ export const AdminDashboard: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleMessageClick = (userId: string) => {
+    if (selectedUser === userId && showMessageOptions) {
+      setShowMessageOptions(false);
+      setSelectedUser(null);
+    } else {
+      setSelectedUser(userId);
+      setShowMessageOptions(true);
+    }
+  };
+
+  const handleGmailClick = (profile: ApplicantProfile) => {
+    const subject = encodeURIComponent('Regarding Your Application at IFA SkillQuest');
+    const body = encodeURIComponent(`Dear ${profile.name},\n\nThank you for your application to IFA SkillQuest.\n\nBest regards,\nIFA Team`);
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${profile.email}&su=${subject}&body=${body}`, '_blank');
+  };
+
+  const handleWhatsAppClick = (profile: ApplicantProfile) => {
+    const message = encodeURIComponent(`Hi ${profile.name}, thank you for your application to IFA SkillQuest. We will get back to you soon!`);
+    const phoneNumber = profile.phone.replace(/\D/g, ''); // Remove non-digits
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  };
 
   return (
     <div className="min-h-screen playful-gradient relative overflow-hidden">
@@ -316,6 +339,7 @@ export const AdminDashboard: React.FC = () => {
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">CGPA</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Location</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Status</th>
+                        <th className="px-4 py-3 text-center font-bold text-[#8558ed]">Message</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#8558ed]/10">
@@ -347,6 +371,79 @@ export const AdminDashboard: React.FC = () => {
                                   In Progress
                                 </span>
                               )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="relative flex items-center justify-center">
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleMessageClick(profile.userId)}
+                                    className={`${
+                                      selectedUser === profile.userId
+                                        ? 'bg-gradient-to-r from-[#8558ed] to-[#b18aff] text-white shadow-lg shadow-[#8558ed]/30'
+                                        : 'bg-white border-2 border-[#8558ed]/30 text-[#8558ed] hover:bg-[#8558ed]/10'
+                                    } font-bold transition-all duration-200`}
+                                  >
+                                    <MessageCircle className="w-4 h-4 mr-1" />
+                                    Message
+                                  </Button>
+                                </motion.div>
+                                
+                                <AnimatePresence>
+                                  {selectedUser === profile.userId && showMessageOptions && (
+                                    <motion.div
+                                      initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                                      exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-2xl border-2 border-[#8558ed]/30 p-2 min-w-[200px]"
+                                    >
+                                      <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#8558ed]/20">
+                                        <span className="text-xs font-bold text-[#8558ed]">Choose Platform</span>
+                                        <button
+                                          onClick={() => {
+                                            setShowMessageOptions(false);
+                                            setSelectedUser(null);
+                                          }}
+                                          className="text-gray-400 hover:text-gray-600"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              handleGmailClick(profile);
+                                              setShowMessageOptions(false);
+                                              setSelectedUser(null);
+                                            }}
+                                            className="w-full justify-start bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold"
+                                          >
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            Gmail
+                                          </Button>
+                                        </motion.div>
+                                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              handleWhatsAppClick(profile);
+                                              setShowMessageOptions(false);
+                                              setSelectedUser(null);
+                                            }}
+                                            className="w-full justify-start bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold"
+                                          >
+                                            <MessageCircle className="w-4 h-4 mr-2" />
+                                            WhatsApp
+                                          </Button>
+                                        </motion.div>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
                             </td>
                           </motion.tr>
                         );
