@@ -338,6 +338,7 @@ export const AdminDashboard: React.FC = () => {
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">College</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">CGPA</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Location</th>
+                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Role</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Status</th>
                         <th className="px-4 py-3 text-center font-bold text-[#8558ed]">Message</th>
                       </tr>
@@ -359,6 +360,22 @@ export const AdminDashboard: React.FC = () => {
                             <td className="px-4 py-3 text-[#030303]/70">{profile.collegeName}</td>
                             <td className="px-4 py-3 font-bold text-[#8558ed]">{profile.cgpa}</td>
                             <td className="px-4 py-3 text-[#030303]/70">{profile.location}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {profile.interestedRoles && profile.interestedRoles.length > 0 ? (
+                                  profile.interestedRoles.map((role, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-2 py-1 bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 text-[#8558ed] text-xs font-semibold rounded-full border border-[#8558ed]/20"
+                                    >
+                                      {role}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[#030303]/40 text-xs italic">No role specified</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-4 py-3">
                               {assessment?.completedAt ? (
                                 <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full flex items-center gap-1">

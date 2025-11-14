@@ -266,14 +266,7 @@ export const AssessmentDashboard: React.FC = () => {
       skill: 'Risk Assessment & Deductive Logic',
       Icon: Bomb,
       color: 'from-game-purple-700 to-game-purple-500',
-    },
-    {
-      type: 'unblock-me' as GameType,
-      title: 'Unblock Me',
-      description: 'Challenge your spatial reasoning and planning',
-      skill: 'Spatial Reasoning & Planning',
-      Icon: Car,
-      color: 'from-orange-500 to-orange-400',
+      available: true,
     },
     {
       type: 'water-capacity' as GameType,
@@ -282,6 +275,16 @@ export const AssessmentDashboard: React.FC = () => {
       skill: 'Logical Sequencing & Optimization',
       Icon: Droplet,
       color: 'from-game-teal-500 to-game-teal-400',
+      available: true,
+    },
+    {
+      type: 'unblock-me' as GameType,
+      title: 'Unblock Me',
+      description: 'Challenge your spatial reasoning and planning',
+      skill: 'Spatial Reasoning & Planning',
+      Icon: Car,
+      color: 'from-orange-500 to-orange-400',
+      available: false,
     },
   ];
 
@@ -576,12 +579,30 @@ export const AssessmentDashboard: React.FC = () => {
                 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <SubtleHoverCard disabled={!unlocked}>
-                  <Card className={`${!unlocked ? 'opacity-60' : ''} border-2 border-game-purple-500/20 hover:shadow-lg hover:shadow-game-purple-500/10 transition-all duration-300 bg-white/90 backdrop-blur-xl relative overflow-hidden group ${
+                <SubtleHoverCard disabled={!unlocked || !game.available}>
+                  <Card className={`${!unlocked || !game.available ? 'opacity-60' : ''} border-2 border-game-purple-500/20 hover:shadow-lg hover:shadow-game-purple-500/10 transition-all duration-300 bg-white/90 backdrop-blur-xl relative overflow-hidden group ${
                     game.type === nextGame && !completed ? 'ring-2 ring-game-purple-500 ring-offset-2' : ''
                   }`}>
+                    {/* Coming Soon Ribbon */}
+                    {!game.available && (
+                      <motion.div
+                        className="absolute top-3 right-3 z-30"
+                        initial={{ scale: 0, rotate: 0 }}
+                        animate={{ scale: 1, rotate: 12 }}
+                        transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 15 }}
+                      >
+                        <motion.div
+                          className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 text-white text-sm font-extrabold px-4 py-2 rounded-full shadow-2xl border-2 border-white"
+                          animate={{ scale: [1, 1.08, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          Coming Soon
+                        </motion.div>
+                      </motion.div>
+                    )}
+                    
                     {/* Next Up Badge */}
-                    {game.type === nextGame && !completed && (
+                    {game.type === nextGame && !completed && game.available && (
                       <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
@@ -636,7 +657,7 @@ export const AssessmentDashboard: React.FC = () => {
                           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-game-purple-700 to-game-purple-400 animate-ping opacity-20" />
                           <GameIcon className="w-8 h-8 text-white relative z-10" />
                         </motion.div>
-                        {!unlocked && (
+                        {!unlocked && game.available && (
                           <motion.div
                             animate={{ rotate: [0, -10, 10, -10, 0] }}
                             transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
@@ -711,7 +732,7 @@ export const AssessmentDashboard: React.FC = () => {
                                 transition={{ duration: 0.3 }}
                                 className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800"
                               >
-                                You can replay this game in the next <strong>24 hours</strong>. 
+                                You can replay this game in the next <strong>7 days</strong>. 
                                 Until then, this game will be unavailable for you to attempt again.
                               </motion.div>
                             )}
@@ -734,16 +755,21 @@ export const AssessmentDashboard: React.FC = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         onClick={() => startGame(game.type, false)}
-                        disabled={!unlocked || completed}
+                        disabled={!unlocked || completed || !game.available}
                         className={`w-full ${
                           completed 
                             ? 'bg-game-purple-500/10 text-game-purple-700 border-game-purple-500/30' 
-                            : !unlocked 
+                            : !unlocked || !game.available
                             ? 'bg-gray-100 text-gray-400 border-gray-300' 
                             : 'bg-gradient-to-r from-game-purple-700 via-game-purple-600 to-game-purple-500 hover:from-game-purple-800 hover:via-game-purple-700 hover:to-game-purple-600 text-white font-bold rounded-xl shadow-lg shadow-game-purple-500/30 hover:shadow-xl hover:shadow-game-purple-500/40'
                         }`}
                       >
-                      {completed ? (
+                      {!game.available ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2" />
+                          Coming Soon
+                        </>
+                      ) : completed ? (
                         <>
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Completed
@@ -765,11 +791,16 @@ export const AssessmentDashboard: React.FC = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         onClick={() => startGame(game.type, true)}
-                        disabled={!trialUnlocked}
+                        disabled={!trialUnlocked || !game.available}
                         variant="outline"
                         className="w-full"
                       >
-                      {!trialUnlocked ? (
+                      {!game.available ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2" />
+                          Coming Soon
+                        </>
+                      ) : !trialUnlocked ? (
                         <>
                           <Lock className="w-4 h-4 mr-2" />
                           Trial Locked

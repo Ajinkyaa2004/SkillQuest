@@ -257,10 +257,12 @@ export const Chatbot: React.FC = () => {
   };
 
   const quickQuestions = [
+    'What is a good score?',
+    'Can I retake the assessment?',
+    'What happens if I fail a game?',
+    'Can I pause the game?',
+    'What if my internet disconnects?',
     'How long is the assessment?',
-    'What games are included?',
-    'How is scoring done?',
-    'What is trial mode?',
   ];
 
   const handleQuickQuestion = (question: string) => {
@@ -300,7 +302,7 @@ export const Chatbot: React.FC = () => {
                 ) : (
                   <MessageCircle className="w-5 h-5 mr-2" />
                 )}
-                SkillQuest Assistant {isAIEnabled() && <span className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full">AI</span>}
+                IFA SkillQuest Assistant {isAIEnabled() && <span className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full">AI</span>}
               </CardTitle>
               <button
                 onClick={() => setIsOpen(false)}
