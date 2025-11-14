@@ -16,7 +16,9 @@ const roles = [
     icon: UserCircle,
     available: true,
     badge: 'Popular',
-    badgeColor: 'from-[green] to-[lightgreen]',
+    badgeColor: 'from-game-teal-500 to-game-teal-400',
+    cardColor: 'from-game-teal-500 to-game-teal-400',
+    glowColor: 'shadow-game-teal-500/30',
   },
   {
     type: 'admin' as UserRole,
@@ -25,7 +27,9 @@ const roles = [
     icon: Shield,
     available: true,
     badge: 'MVP',
-    badgeColor: 'from-[green] to-[lightgreen]',
+    badgeColor: 'from-game-orange-500 to-game-orange-400',
+    cardColor: 'from-game-orange-500 to-game-orange-400',
+    glowColor: 'shadow-game-orange-500/30',
   },
   {
     type: 'employee' as UserRole,
@@ -34,7 +38,9 @@ const roles = [
     icon: Briefcase,
     available: false,
     badge: 'Soon',
-    badgeColor: 'from-[orange] to-[red]',
+    badgeColor: 'from-game-purple-500 to-game-purple-400',
+    cardColor: 'from-game-purple-500 to-game-purple-400',
+    glowColor: 'shadow-game-purple-500/30',
   },
   {
     type: 'client' as UserRole,
@@ -43,7 +49,9 @@ const roles = [
     icon: Users,
     available: false,
     badge: 'Soon',
-    badgeColor: 'from-[orange] to-[red]',
+    badgeColor: 'from-game-teal-500 to-game-teal-600',
+    cardColor: 'from-game-teal-500 to-game-teal-400',
+    glowColor: 'shadow-game-teal-500/30',
   },
 ];
 
@@ -102,7 +110,11 @@ const ParticleSystem: React.FC = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-[#8558ed]"
+          className={`absolute rounded-full ${
+            particle.id % 3 === 0 ? 'bg-game-teal-400' : 
+            particle.id % 3 === 1 ? 'bg-game-orange-400' : 
+            'bg-game-purple-400'
+          }`}
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
@@ -143,7 +155,11 @@ const Sparkle: React.FC<{ delay: number; x: string; y: string }> = ({ delay, x, 
     className="absolute"
     style={{ left: x, top: y }}
   >
-    <Sparkles className="w-20 h-10 text-[#8558ed]/40" />
+    <Sparkles className={`w-20 h-10 ${
+      delay % 3 === 0 ? 'text-game-teal-400/40' :
+      delay % 3 === 1 ? 'text-game-orange-400/40' :
+      'text-game-purple-400/40'
+    }`} />
   </motion.div>
 );
 
@@ -152,7 +168,7 @@ const TiltCard: React.FC<{
   children: React.ReactNode;
   onClick: () => void;
   available: boolean;
-}> = ({ children, onClick, available }) => {
+}> = ({ children }) => {
   const [isHovered, setIsHovered] = useState(false);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -194,8 +210,6 @@ const TiltCard: React.FC<{
 export const RoleSelection: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [hoveredRole, setHoveredRole] = useState<string | null>(null);
-  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
 
   const handleRoleSelect = (role: UserRole, available: boolean) => {
     if (!available) {
@@ -216,16 +230,37 @@ export const RoleSelection: React.FC = () => {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen bg-gradient-to-br from-[#f3f0fc] flex items-center justify-center p-6 relative overflow-hidden"
+      className="min-h-screen playful-gradient flex items-center justify-center p-6 relative overflow-hidden"
     >
       {/* Particle System */}
       <ParticleSystem />
 
       {/* Floating Background Orbs */}
       <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden">
-        <div className="absolute w-72 h-72 bg-[#8558ed]/30 rounded-full blur-3xl top-10 left-20 animate-pulse"></div>
-        <div className="absolute w-60 h-60 bg-[#b18aff]/20 rounded-full blur-3xl bottom-10 right-20 animate-bounce"></div>
-        <div className="absolute w-96 h-96 bg-[#f3f0fc]/10 rounded-full blur-3xl top-1/2 left-1/3 animate-spin-slow"></div>
+        <motion.div 
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute w-72 h-72 bg-gradient-to-br from-game-teal-400/30 to-game-orange-400/20 rounded-full blur-3xl top-10 left-20"
+        />
+        <motion.div 
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute w-60 h-60 bg-gradient-to-br from-game-purple-400/20 to-game-teal-400/30 rounded-full blur-3xl bottom-10 right-20"
+        />
+        <motion.div 
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.1, 0.2, 0.1],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute w-96 h-96 bg-gradient-to-br from-game-orange-400/10 to-game-purple-400/15 rounded-full blur-3xl top-1/2 left-1/3"
+        />
       </div>
 
       <div className="w-full max-w-6xl">
@@ -241,19 +276,19 @@ export const RoleSelection: React.FC = () => {
           <Sparkle delay={2.5} x="45%" y="90%" />
 
           <h1
-            className="text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] 
-             animate-gradient-x drop-shadow-[0_0_25px_rgba(133,88,237,0.3)] tracking-tight select-none"
+            className="text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-game-purple-700 via-game-purple-500 to-game-purple-400 
+             animate-gradient-x drop-shadow-[0_0_25px_rgba(168,85,247,0.3)] tracking-tight select-none"
           >
-            SkillQuest
+            IFA SkillQuest
           </h1>
 
-          <p className="text-lg font-medium text-[#8558ed]/90 mt-2 flex items-center justify-center gap-2">
-            Choose your journey and let SkillQuest guide you <Rocket className="w-5 h-5 text-[#8558ed]" />
+          <p className="text-lg font-medium text-game-purple-600/90 mt-2 flex items-center justify-center gap-2">
+            Choose your journey and let SkillQuest guide you <Rocket className="w-5 h-5 text-game-orange-500" />
           </p>
 
 
-          <p className="text-lg text-[#030303]/80 mt-2 flex items-center justify-center gap-2">
-            Select your role to continue <ArrowDown className="w-5 h-5 text-[#030303]/70" />
+          <p className="text-lg text-gray-700 mt-2 flex items-center justify-center gap-2">
+            Select your role to continue <ArrowDown className="w-5 h-5 text-game-purple-500" />
           </p>
 
         </div>
@@ -316,10 +351,10 @@ export const RoleSelection: React.FC = () => {
                         {/* Icon */}
                         <motion.div
                           style={{ transformStyle: "preserve-3d", transform: "translateZ(20px)" }}
-                          className="bg-gradient-to-tr from-[#8558ed] to-[#b18aff] w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative"
+                          className={`bg-gradient-to-tr ${role.cardColor} w-16 h-16 rounded-full flex items-center justify-center shadow-lg relative`}
                         >
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#8558ed] to-[#b18aff] animate-ping opacity-20"></div>
-                          <Icon className="w-8 h-8 text-[#f3f0fc] relative z-10" />
+                          <div className={`absolute inset-0 rounded-full bg-gradient-to-tr ${role.cardColor} animate-ping opacity-20`}></div>
+                          <Icon className="w-8 h-8 text-white relative z-10" />
                         </motion.div>
 
                         {/* Badge */}
@@ -336,7 +371,6 @@ export const RoleSelection: React.FC = () => {
                               ? {
                                 scale: 1.06,
                                 y: -2,
-                                boxShadow: "0px 12px 25px rgba(133,88,237,0.3)",
                                 transition: { type: "spring", stiffness: 200, damping: 20 },
                               }
                               : {}
@@ -346,24 +380,16 @@ export const RoleSelection: React.FC = () => {
                               ? {
                                 scale: 0.97,
                                 y: 0,
-                                boxShadow: "0px 6px 12px rgba(133,88,237,0.2)",
                                 transition: { type: "spring", stiffness: 300, damping: 25 },
                               }
                               : {}
                           }
                           initial={{ opacity: 1 }}
-                          animate={
+                          className={`mt-4 w-full rounded-xl py-3 px-6 font-medium text-white transition-all duration-300 ${
                             role.available
-                              ? {
-                                backgroundColor: ["#8558ed", "#b18aff", "#8558ed"],
-                                transition: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-                              }
-                              : {}
-                          }
-                          className={`mt-4 w-full rounded-lg py-2 font-medium text-[#f3f0fc] ${role.available
-                            ? "bg-[#8558ed] hover:bg-[#b18aff]"
-                            : "border border-[#b18aff] text-[#b18aff] cursor-not-allowed bg-transparent"
-                            }`}
+                              ? `bg-gradient-to-r ${role.cardColor} hover:scale-105 ${role.glowColor}`
+                              : `border-2 border-gray-300 text-gray-400 cursor-not-allowed bg-transparent`
+                          }`}
                         >
                           {role.available ? "Continue →" : "Coming Soon"}
                         </motion.button>
@@ -378,14 +404,13 @@ export const RoleSelection: React.FC = () => {
         </motion.div>
 
         {/* Footer */}
-        <div className="text-center mt-20 text-[#030303]/70 text-sm flex items-center justify-center space-x-2">
+        <div className="text-center mt-20 text-gray-600 text-sm flex items-center justify-center space-x-2">
           <motion.div
-
             initial={{ y: 0 }}
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           >
-            <Zap className="w-5 h-5 text-[#8558ed]" />
+            <Zap className="w-5 h-5 text-blue-500" />
           </motion.div>
           <motion.p
             initial={{ opacity: 0 }}
@@ -406,15 +431,15 @@ export const RoleSelection: React.FC = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 flex items-center justify-center bg-[#f3f0fc]/80 backdrop-blur-md z-50"
+          className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-md z-50"
         >
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            className="w-12 h-12 border-4 border-[#8558ed] border-t-transparent rounded-full"
+            className="w-12 h-12 border-4 border-game-teal-500 border-t-transparent rounded-full"
           ></motion.div>
           <motion.p
-            className="ml-4 text-[#8558ed] font-semibold text-lg"
+            className="ml-4 text-game-teal-600 font-semibold text-lg"
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           >

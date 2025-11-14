@@ -1,10 +1,9 @@
-import { User, ApplicantProfile, Assessment, LeaderboardEntry, Message } from '@/types';
+import { User, ApplicantProfile, Assessment, LeaderboardEntry } from '@/types';
 
 const STORAGE_KEYS = {
   USERS: 'ifa_users',
   PROFILES: 'ifa_profiles',
   ASSESSMENTS: 'ifa_assessments',
-  MESSAGES: 'ifa_messages',
   CURRENT_USER: 'ifa_current_user',
 };
 
@@ -117,18 +116,6 @@ export const getLeaderboard = (): LeaderboardEntry[] => {
     .sort((a, b) => b.totalScore - a.totalScore);
   
   return leaderboard;
-};
-
-// Message Management
-export const saveMessage = (message: Message): void => {
-  const messages = getMessages();
-  messages.push(message);
-  localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
-};
-
-export const getMessages = (): Message[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-  return data ? JSON.parse(data) : [];
 };
 
 // Initialize default admin user

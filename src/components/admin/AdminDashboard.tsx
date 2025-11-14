@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfiles, getAssessments, getLeaderboard } from '@/lib/storage';
 import { ApplicantProfile, Assessment, LeaderboardEntry } from '@/types';
-import { Users, Trophy, CheckCircle, Clock, LogOut, Search, Download, Mail, Sparkles, Zap, Star, Target, TrendingUp, Award } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
-import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { Users, Trophy, CheckCircle, Clock, LogOut, Search, Download, Star, Target, TrendingUp, Award, Mail, MessageCircle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { StatCards } from './StatCards';
+import { DashboardCharts } from './DashboardCharts';
+import { CandidateInsights } from './CandidateInsights';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -18,9 +19,10 @@ export const AdminDashboard: React.FC = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'leaderboard'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'leaderboard' | 'insights'>('overview');
   const [sortBy, setSortBy] = useState<'total' | 'minesweeper' | 'unblockMe' | 'waterCapacity'>('total');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [showMessageOptions, setShowMessageOptions] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -64,38 +66,6 @@ export const AdminDashboard: React.FC = () => {
       }
     });
 
-  const toggleCandidateSelection = (candidateId: string) => {
-    const newSelection = new Set(selectedCandidates);
-    if (newSelection.has(candidateId)) {
-      newSelection.delete(candidateId);
-    } else {
-      newSelection.add(candidateId);
-    }
-    setSelectedCandidates(newSelection);
-  };
-
-  const selectAll = () => {
-    if (activeTab === 'candidates') {
-      setSelectedCandidates(new Set(filteredProfiles.map(p => p.candidateId)));
-    } else {
-      setSelectedCandidates(new Set(filteredLeaderboard.map(l => l.candidateId)));
-    }
-  };
-
-  const deselectAll = () => {
-    setSelectedCandidates(new Set());
-  };
-
-  const sendMessages = () => {
-    if (selectedCandidates.size === 0) {
-      toast.error('Please select at least one candidate.', {
-        duration: 4000,
-        icon: '👥',
-      });
-      return;
-    }
-    navigate('/admin/messaging', { state: { selectedCandidates: Array.from(selectedCandidates) } });
-  };
 
   const exportData = () => {
     const data = activeTab === 'leaderboard' ? filteredLeaderboard : filteredProfiles;
@@ -120,13 +90,30 @@ export const AdminDashboard: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const completedAssessments = assessments.filter(a => a.completedAt).length;
-  const averageScore = leaderboard.length > 0
-    ? Math.round(leaderboard.reduce((sum, entry) => sum + entry.totalScore, 0) / leaderboard.length)
-    : 0;
+  const handleMessageClick = (userId: string) => {
+    if (selectedUser === userId && showMessageOptions) {
+      setShowMessageOptions(false);
+      setSelectedUser(null);
+    } else {
+      setSelectedUser(userId);
+      setShowMessageOptions(true);
+    }
+  };
+
+  const handleGmailClick = (profile: ApplicantProfile) => {
+    const subject = encodeURIComponent('Regarding Your Application at IFA SkillQuest');
+    const body = encodeURIComponent(`Dear ${profile.name},\n\nThank you for your application to IFA SkillQuest.\n\nBest regards,\nIFA Team`);
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${profile.email}&su=${subject}&body=${body}`, '_blank');
+  };
+
+  const handleWhatsAppClick = (profile: ApplicantProfile) => {
+    const message = encodeURIComponent(`Hi ${profile.name}, thank you for your application to IFA SkillQuest. We will get back to you soon!`);
+    const phoneNumber = profile.phone.replace(/\D/g, ''); // Remove non-digits
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] relative overflow-hidden">
+    <div className="min-h-screen playful-gradient relative overflow-hidden">
       {/* Animated Background Orbs */}
       <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <motion.div
@@ -135,7 +122,7 @@ export const AdminDashboard: React.FC = () => {
             opacity: [0.3, 0.2, 0.3],
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute w-96 h-96 bg-[#8558ed]/20 rounded-full blur-3xl top-10 -left-20"
+          className="absolute w-96 h-96 bg-gradient-to-br from-game-teal-400/20 to-game-orange-400/20 rounded-full blur-3xl top-10 -left-20"
         />
         <motion.div
           animate={{
@@ -143,55 +130,35 @@ export const AdminDashboard: React.FC = () => {
             opacity: [0.2, 0.3, 0.2],
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute w-80 h-80 bg-[#b18aff]/20 rounded-full blur-3xl bottom-10 -right-20"
+          className="absolute w-80 h-80 bg-gradient-to-br from-game-purple-400/20 to-game-teal-400/20 rounded-full blur-3xl bottom-10 -right-20"
         />
       </div>
 
       {/* Floating Icons */}
-      <motion.div
-        animate={{
-          y: [0, -20, 0],
-          rotate: [0, 10, 0],
-        }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 left-10 pointer-events-none"
-      >
-        <Sparkles className="w-8 h-8 text-[#8558ed]/30" />
-      </motion.div>
-      <motion.div
-        animate={{
-          y: [0, 20, 0],
-          rotate: [0, -10, 0],
-        }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute top-32 right-16 pointer-events-none"
-      >
-        <Zap className="w-10 h-10 text-[#b18aff]/30" />
-      </motion.div>
 
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white/80 backdrop-blur-xl border-b-2 border-[#8558ed]/20 shadow-lg shadow-[#8558ed]/10 sticky top-0 z-50"
+        className="bg-white/80 backdrop-blur-xl border-b-2 border-game-teal-500/20 shadow-lg shadow-game-teal-500/10 sticky top-0 z-50"
       >
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] flex items-center gap-2">
-              <Target className="w-8 h-8 text-[#8558ed]" />
+            <h1 className="text-3xl font-extrabold text-game-teal-700 flex items-center gap-2">
+              <Target className="w-8 h-8 text-game-teal-500" />
               Admin Dashboard
             </h1>
-            <p className="text-sm text-[#8558ed]/70 font-medium mt-1 flex items-center gap-2">
+            <p className="text-sm text-game-teal-600/70 font-medium mt-1 flex items-center gap-2">
               <Star className="w-4 h-4" />
-              SkillQuest
+               IFA SkillQuest
             </p>
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               variant="outline"
               onClick={logout}
-              className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10 font-semibold"
+              className="border-2 border-game-teal-500/30 hover:bg-game-teal-500/10 font-semibold"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -201,110 +168,28 @@ export const AdminDashboard: React.FC = () => {
       </motion.div>
 
       <div className="max-w-7xl mx-auto p-4">
-        {/* Stats Overview */}
+        {/* Dashboard Overview */}
         {activeTab === 'overview' && (
-          <>
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-            >
-              <motion.div whileHover={{ scale: 1.05, y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="bg-white/80 backdrop-blur-xl border-2 border-[#8558ed]/30 shadow-lg shadow-[#8558ed]/10 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#8558ed]/20 to-transparent rounded-full -mr-16 -mt-16" />
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-[#8558ed]/70">Total Applicants</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <motion.div
-                        animate={{ rotate: [0, 5, -5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="bg-gradient-to-tr from-[#8558ed] to-[#b18aff] w-14 h-14 rounded-2xl flex items-center justify-center"
-                      >
-                        <Users className="w-7 h-7 text-white" />
-                      </motion.div>
-                      <div className="text-4xl font-extrabold text-[#8558ed]">{profiles.length}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="bg-white/80 backdrop-blur-xl border-2 border-green-500/30 shadow-lg shadow-green-500/10 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/20 to-transparent rounded-full -mr-16 -mt-16" />
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-green-700/70">Completed</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <motion.div
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="bg-gradient-to-tr from-green-500 to-emerald-500 w-14 h-14 rounded-2xl flex items-center justify-center"
-                      >
-                        <CheckCircle className="w-7 h-7 text-white" />
-                      </motion.div>
-                      <div className="text-4xl font-extrabold text-green-600">{completedAssessments}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="bg-white/80 backdrop-blur-xl border-2 border-amber-500/30 shadow-lg shadow-amber-500/10 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/20 to-transparent rounded-full -mr-16 -mt-16" />
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-amber-700/70">In Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className="bg-gradient-to-tr from-amber-500 to-orange-500 w-14 h-14 rounded-2xl flex items-center justify-center"
-                      >
-                        <Clock className="w-7 h-7 text-white" />
-                      </motion.div>
-                      <div className="text-4xl font-extrabold text-amber-600">{profiles.length - completedAssessments}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="bg-white/80 backdrop-blur-xl border-2 border-[#b18aff]/30 shadow-lg shadow-[#b18aff]/10 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#b18aff]/20 to-transparent rounded-full -mr-16 -mt-16" />
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-[#8558ed]/70">Average Score</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="bg-gradient-to-tr from-[#b18aff] to-[#d4c5ff] w-14 h-14 rounded-2xl flex items-center justify-center"
-                      >
-                        <Trophy className="w-7 h-7 text-white" />
-                      </motion.div>
-                      <div className="text-4xl font-extrabold text-[#8558ed]">{averageScore}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-8"
+          >
+            {/* Stat Cards */}
+            <StatCards profiles={profiles} assessments={assessments} />
+            
+            {/* Navigation Buttons */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   onClick={() => setActiveTab('candidates')}
-                  className="w-full h-28 text-lg font-bold bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white shadow-lg shadow-[#8558ed]/30"
+                  className="w-full h-28 text-lg font-bold bg-gradient-to-r from-game-teal-500 to-game-teal-400 hover:from-game-teal-600 hover:to-game-teal-500 text-white shadow-lg shadow-game-teal-500/30"
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Users className="w-8 h-8" />
@@ -314,8 +199,19 @@ export const AdminDashboard: React.FC = () => {
               </motion.div>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                 <Button
+                  onClick={() => setActiveTab('insights')}
+                  className="w-full h-28 text-lg font-bold bg-gradient-to-r from-game-purple-500 to-game-purple-400 hover:from-game-purple-600 hover:to-game-purple-500 text-white shadow-lg shadow-game-purple-500/30"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <TrendingUp className="w-8 h-8" />
+                    <span>View Candidate Insights</span>
+                  </div>
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+                <Button
                   onClick={() => setActiveTab('leaderboard')}
-                  className="w-full h-28 text-lg font-bold bg-gradient-to-r from-[#b18aff] to-[#d4c5ff] hover:from-[#a179f0] hover:to-[#c9a9ff] text-white shadow-lg shadow-[#b18aff]/30"
+                  className="w-full h-28 text-lg font-bold bg-gradient-to-r from-game-orange-500 to-game-orange-400 hover:from-game-orange-600 hover:to-game-orange-500 text-white shadow-lg shadow-game-orange-500/30"
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Trophy className="w-8 h-8" />
@@ -323,20 +219,17 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </Button>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  onClick={sendMessages}
-                  variant="outline"
-                  className="w-full h-28 text-lg font-bold border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10 text-[#8558ed]"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <Mail className="w-8 h-8" />
-                    <span>Send Messages</span>
-                  </div>
-                </Button>
-              </motion.div>
             </motion.div>
-          </>
+            
+            {/* Dashboard Charts */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <DashboardCharts profiles={profiles} assessments={assessments} />
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Tab Navigation */}
@@ -373,6 +266,18 @@ export const AdminDashboard: React.FC = () => {
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
+                variant={activeTab === 'insights' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('insights')}
+                className={activeTab === 'insights' 
+                  ? 'bg-gradient-to-r from-[#8558ed] to-[#b18aff] text-white font-bold' 
+                  : 'border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10 font-bold'}
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Insights
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
                 variant="outline"
                 onClick={() => setActiveTab('overview')}
                 className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10 font-bold"
@@ -403,27 +308,6 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button onClick={selectAll} size="sm" variant="outline" className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10">
-                        Select All
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button onClick={deselectAll} size="sm" variant="outline" className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10">
-                        Deselect All
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={sendMessages}
-                        size="sm"
-                        disabled={selectedCandidates.size === 0}
-                        className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white"
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Message ({selectedCandidates.size})
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button onClick={exportData} size="sm" variant="outline" className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10">
                         <Download className="w-4 h-4 mr-2" />
                         Export
@@ -448,16 +332,15 @@ export const AdminDashboard: React.FC = () => {
                   <table className="w-full text-sm">
                     <thead className="bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 border-b-2 border-[#8558ed]/20">
                       <tr>
-                        <th className="px-4 py-3 text-left">
-                          <input type="checkbox" onChange={(e) => e.target.checked ? selectAll() : deselectAll()} className="accent-[#8558ed]" />
-                        </th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Candidate ID</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Name</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Email</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">College</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">CGPA</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Location</th>
+                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Role</th>
                         <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Status</th>
+                        <th className="px-4 py-3 text-center font-bold text-[#8558ed]">Message</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#8558ed]/10">
@@ -471,20 +354,28 @@ export const AdminDashboard: React.FC = () => {
                             transition={{ delay: idx * 0.05 }}
                             className="hover:bg-[#8558ed]/5 transition-colors"
                           >
-                            <td className="px-4 py-3">
-                              <input
-                                type="checkbox"
-                                checked={selectedCandidates.has(profile.candidateId)}
-                                onChange={() => toggleCandidateSelection(profile.candidateId)}
-                                className="accent-[#8558ed]"
-                              />
-                            </td>
                             <td className="px-4 py-3 font-mono text-xs text-[#8558ed]/70">{profile.candidateId}</td>
                             <td className="px-4 py-3 font-semibold text-[#030303]">{profile.name}</td>
                             <td className="px-4 py-3 text-[#030303]/70">{profile.email}</td>
                             <td className="px-4 py-3 text-[#030303]/70">{profile.collegeName}</td>
                             <td className="px-4 py-3 font-bold text-[#8558ed]">{profile.cgpa}</td>
                             <td className="px-4 py-3 text-[#030303]/70">{profile.location}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {profile.interestedRoles && profile.interestedRoles.length > 0 ? (
+                                  profile.interestedRoles.map((role, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-2 py-1 bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 text-[#8558ed] text-xs font-semibold rounded-full border border-[#8558ed]/20"
+                                    >
+                                      {role}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[#030303]/40 text-xs italic">No role specified</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-4 py-3">
                               {assessment?.completedAt ? (
                                 <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
@@ -497,6 +388,79 @@ export const AdminDashboard: React.FC = () => {
                                   In Progress
                                 </span>
                               )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="relative flex items-center justify-center">
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleMessageClick(profile.userId)}
+                                    className={`${
+                                      selectedUser === profile.userId
+                                        ? 'bg-gradient-to-r from-[#8558ed] to-[#b18aff] text-white shadow-lg shadow-[#8558ed]/30'
+                                        : 'bg-white border-2 border-[#8558ed]/30 text-[#8558ed] hover:bg-[#8558ed]/10'
+                                    } font-bold transition-all duration-200`}
+                                  >
+                                    <MessageCircle className="w-4 h-4 mr-1" />
+                                    Message
+                                  </Button>
+                                </motion.div>
+                                
+                                <AnimatePresence>
+                                  {selectedUser === profile.userId && showMessageOptions && (
+                                    <motion.div
+                                      initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                                      exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-2xl border-2 border-[#8558ed]/30 p-2 min-w-[200px]"
+                                    >
+                                      <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#8558ed]/20">
+                                        <span className="text-xs font-bold text-[#8558ed]">Choose Platform</span>
+                                        <button
+                                          onClick={() => {
+                                            setShowMessageOptions(false);
+                                            setSelectedUser(null);
+                                          }}
+                                          className="text-gray-400 hover:text-gray-600"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              handleGmailClick(profile);
+                                              setShowMessageOptions(false);
+                                              setSelectedUser(null);
+                                            }}
+                                            className="w-full justify-start bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold"
+                                          >
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            Gmail
+                                          </Button>
+                                        </motion.div>
+                                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              handleWhatsAppClick(profile);
+                                              setShowMessageOptions(false);
+                                              setSelectedUser(null);
+                                            }}
+                                            className="w-full justify-start bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold"
+                                          >
+                                            <MessageCircle className="w-4 h-4 mr-2" />
+                                            WhatsApp
+                                          </Button>
+                                        </motion.div>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
                             </td>
                           </motion.tr>
                         );
@@ -532,27 +496,6 @@ export const AdminDashboard: React.FC = () => {
                     <CardDescription className="text-[#8558ed]/60 font-medium">Top performers ranked by total score</CardDescription>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button onClick={selectAll} size="sm" variant="outline" className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10">
-                        Select All
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button onClick={deselectAll} size="sm" variant="outline" className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10">
-                        Deselect All
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={sendMessages}
-                        size="sm"
-                        disabled={selectedCandidates.size === 0}
-                        className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white"
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Message ({selectedCandidates.size})
-                      </Button>
-                    </motion.div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button onClick={exportData} size="sm" variant="outline" className="border-2 border-[#8558ed]/30 hover:bg-[#8558ed]/10">
                         <Download className="w-4 h-4 mr-2" />
@@ -630,95 +573,105 @@ export const AdminDashboard: React.FC = () => {
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 border-b-2 border-[#8558ed]/20">
+                    <thead className="bg-gradient-to-r from-game-teal-100/50 via-game-orange-100/50 to-game-purple-100/50 border-b-2 border-game-teal-500/20">
                       <tr>
-                        <th className="px-4 py-3 text-left">
-                          <input type="checkbox" onChange={(e) => e.target.checked ? selectAll() : deselectAll()} className="accent-[#8558ed]" />
-                        </th>
-                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Rank</th>
-                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Candidate ID</th>
-                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Name</th>
-                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">College</th>
-                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'total' ? 'text-[#8558ed] bg-[#8558ed]/10' : 'text-[#8558ed]'}`}>
+                        <th className="px-4 py-3 text-left font-bold text-game-teal-700">Rank</th>
+                        <th className="px-4 py-3 text-left font-bold text-game-teal-700">Candidate ID</th>
+                        <th className="px-4 py-3 text-left font-bold text-game-teal-700">Name</th>
+                        <th className="px-4 py-3 text-left font-bold text-game-teal-700">College</th>
+                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'total' ? 'text-game-teal-700 bg-game-teal-100/50' : 'text-game-teal-700'}`}>
                           <div className="flex items-center gap-2">
                             Total Score
                             {sortBy === 'total' && <TrendingUp className="w-4 h-4" />}
                           </div>
                         </th>
-                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'minesweeper' ? 'text-[#8558ed] bg-[#8558ed]/10' : 'text-[#8558ed]'}`}>
+                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'minesweeper' ? 'text-game-orange-700 bg-game-orange-100/50' : 'text-game-orange-700'}`}>
                           <div className="flex items-center gap-2">
                             <Target className="w-4 h-4" />
                             Minesweeper
                             {sortBy === 'minesweeper' && <TrendingUp className="w-4 h-4" />}
                           </div>
                         </th>
-                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'unblockMe' ? 'text-[#8558ed] bg-[#8558ed]/10' : 'text-[#8558ed]'}`}>
+                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'unblockMe' ? 'text-game-purple-700 bg-game-purple-100/50' : 'text-game-purple-700'}`}>
                           <div className="flex items-center gap-2">
                             <Award className="w-4 h-4" />
                             Unblock Me
                             {sortBy === 'unblockMe' && <TrendingUp className="w-4 h-4" />}
                           </div>
                         </th>
-                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'waterCapacity' ? 'text-[#8558ed] bg-[#8558ed]/10' : 'text-[#8558ed]'}`}>
+                        <th className={`px-4 py-3 text-left font-bold ${sortBy === 'waterCapacity' ? 'text-game-teal-700 bg-game-teal-100/50' : 'text-game-teal-700'}`}>
                           <div className="flex items-center gap-2">
                             <Award className="w-4 h-4" />
                             Water Cap.
                             {sortBy === 'waterCapacity' && <TrendingUp className="w-4 h-4" />}
                           </div>
                         </th>
-                        <th className="px-4 py-3 text-left font-bold text-[#8558ed]">Completed</th>
+                        <th className="px-4 py-3 text-left font-bold text-game-teal-700">Completed</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#8558ed]/10">
-                      {filteredLeaderboard.map((entry, index) => (
+                    <tbody className="divide-y divide-game-teal-200/30">
+                      {filteredLeaderboard.map((entry, index) => {
+                        const getRankBadge = () => {
+                          if (index === 0) return { color: 'text-amber-500', bg: 'leaderboard-gold', label: '🥇' };
+                          if (index === 1) return { color: 'text-gray-500', bg: 'leaderboard-silver', label: '🥈' };
+                          if (index === 2) return { color: 'text-amber-700', bg: 'leaderboard-bronze', label: '🥉' };
+                          return { color: 'text-game-teal-600', bg: 'leaderboard-default', label: `#${index + 1}` };
+                        };
+                        
+                        const rankBadge = getRankBadge();
+                        
+                        return (
                         <motion.tr
                           key={entry.candidateId}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          className={`hover:bg-[#8558ed]/5 transition-colors ${
-                            index < 3 ? 'bg-gradient-to-r from-amber-50 to-yellow-50' : ''
+                          className={`hover:bg-game-teal-50/50 transition-colors ${
+                            index < 3 ? 'bg-gradient-to-r from-game-teal-50/20 via-game-orange-50/20 to-game-purple-50/20' : ''
                           }`}
                         >
                           <td className="px-4 py-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedCandidates.has(entry.candidateId)}
-                              onChange={() => toggleCandidateSelection(entry.candidateId)}
-                              className="accent-[#8558ed]"
-                            />
+                            {index < 3 ? (
+                              <motion.div
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${rankBadge.bg} text-white font-bold text-lg shadow-lg`}
+                              >
+                                {rankBadge.label}
+                              </motion.div>
+                            ) : (
+                              <span className={`font-extrabold text-xl ${rankBadge.color}`}>#{index + 1}</span>
+                            )}
                           </td>
-                          <td className="px-4 py-3 font-extrabold text-xl">
-                            {index === 0 && <Trophy className="w-6 h-6 text-amber-500" />}
-                            {index === 1 && <Trophy className="w-6 h-6 text-gray-400" />}
-                            {index === 2 && <Trophy className="w-6 h-6 text-amber-700" />}
-                            {index > 2 && <span className="text-[#8558ed]">#{index + 1}</span>}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-[#8558ed]/70">{entry.candidateId}</td>
-                          <td className="px-4 py-3 font-semibold text-[#030303]">{entry.name}</td>
-                          <td className="px-4 py-3 text-[#030303]/70">{entry.collegeName}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-game-teal-600/70">{entry.candidateId}</td>
+                          <td className="px-4 py-3 font-semibold text-gray-800">{entry.name}</td>
+                          <td className="px-4 py-3 text-gray-600">{entry.collegeName}</td>
                           <td className="px-4 py-3">
                             <motion.span
                               whileHover={{ scale: 1.1 }}
-                              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#8558ed] to-[#b18aff]"
+                              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-game-teal-600 to-game-teal-400"
                             >
                               {entry.totalScore}
                             </motion.span>
                           </td>
-                          <td className="px-4 py-3 font-bold text-[#8558ed]">{entry.gameScores.minesweeper}</td>
-                          <td className="px-4 py-3 font-bold text-[#8558ed]">{entry.gameScores.unblockMe}</td>
-                          <td className="px-4 py-3 font-bold text-[#8558ed]">{entry.gameScores.waterCapacity}</td>
-                          <td className="px-4 py-3 text-xs text-[#030303]/60 font-medium">
-                            {formatDate(entry.completedAt)}
+                          <td className="px-4 py-3 font-bold text-game-orange-600">{entry.gameScores.minesweeper}</td>
+                          <td className="px-4 py-3 font-bold text-game-purple-600">{entry.gameScores.unblockMe}</td>
+                          <td className="px-4 py-3 font-bold text-game-teal-600">{entry.gameScores.waterCapacity}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 font-medium">
+                            {new Date(entry.completedAt).toLocaleDateString()}
                           </td>
                         </motion.tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
+        )}
+
+        {/* Candidate Insights */}
+        {activeTab === 'insights' && (
+          <CandidateInsights profiles={profiles} assessments={assessments} />
         )}
       </div>
     </div>

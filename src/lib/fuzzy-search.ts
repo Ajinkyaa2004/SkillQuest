@@ -122,6 +122,36 @@ export const FAQ_DATABASE: FAQItem[] = [
     keywords: ['telegram', 'username', 'contact', '@'],
     category: 'profile',
   },
+  {
+    question: 'What is a good score?',
+    answer: 'A good score varies by game, but generally: completing 3+ levels in Minesweeper, 2+ puzzles in Unblock Me, and 2+ puzzles in Water Capacity is considered strong performance. Top performers complete 5+ levels total across all games.',
+    keywords: ['good score', 'average', 'benchmark', 'performance', 'competitive', 'passing'],
+    category: 'scoring',
+  },
+  {
+    question: 'What if my internet disconnects?',
+    answer: 'If your internet disconnects during the assessment, your progress will be lost and the game will be marked as failed. Ensure you have a stable internet connection before starting. You can retry the game after 7 days.',
+    keywords: ['internet', 'disconnect', 'connection', 'network', 'lost', 'wifi'],
+    category: 'technical',
+  },
+  {
+    question: 'Can I pause the game?',
+    answer: 'No, the 5-minute timer cannot be paused once the game starts. This ensures fairness for all candidates. Make sure you are ready and have a distraction-free environment before starting.',
+    keywords: ['pause', 'stop', 'break', 'timer', 'freeze'],
+    category: 'rules',
+  },
+  {
+    question: 'What happens if I fail a game?',
+    answer: 'If you fail a game (due to disqualification for tab switching or running out of time without completing any puzzles), you can retry the game after 7 days. Your failed attempt will be visible to recruiters.',
+    keywords: ['fail', 'failed', 'failure', 'disqualified', 'consequences'],
+    category: 'rules',
+  },
+  {
+    question: 'Can I retake the assessment?',
+    answer: 'Each game can only be attempted once in scored mode. However, if you fail a game, you can retry it after 7 days. Trial mode is available anytime for practice without affecting your score.',
+    keywords: ['retake', 'retry', 'attempt again', 'redo', 'second chance'],
+    category: 'general',
+  },
 ];
 
 // Create Fuse instance for fuzzy searching

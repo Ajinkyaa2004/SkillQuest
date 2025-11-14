@@ -3,10 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProfiles, saveMessage } from '@/lib/storage';
+import { getProfiles } from '@/lib/storage';
 import { ApplicantProfile, MESSAGE_TEMPLATES } from '@/types';
 import { ArrowLeft, Mail, MessageSquare, Send, Sparkles, Zap, Users, CheckCircle2, AlertCircle } from 'lucide-react';
-import { generateId } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -14,7 +13,6 @@ export const Messaging: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [candidates, setCandidates] = useState<ApplicantProfile[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('interview-invitation');
   const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set(['email']));
@@ -28,9 +26,8 @@ export const Messaging: React.FC = () => {
 
     const state = location.state as { selectedCandidates?: string[] };
     if (state?.selectedCandidates) {
-      setSelectedCandidates(state.selectedCandidates);
       const profiles = getProfiles();
-      const selected = profiles.filter(p => (state.selectedCandidates ?? []).includes(p.candidateId));
+      const selected = profiles.filter((p: ApplicantProfile) => (state.selectedCandidates ?? []).includes(p.candidateId));
       setCandidates(selected);
     } else {
       navigate('/admin/dashboard');
@@ -69,16 +66,10 @@ export const Messaging: React.FC = () => {
     // Simulate sending messages
     await new Promise(resolve => setTimeout(resolve, 2000));
 
+    // In a real application, this would call the backend API to send messages
+    // For now, we just log the messages that would be sent
     selectedChannels.forEach(channel => {
-      const message = {
-        id: generateId(),
-        type: channel as 'email' | 'whatsapp' | 'telegram',
-        template: selectedTemplate,
-        recipients: candidates.map(c => c.email),
-        sentAt: new Date().toISOString(),
-        status: 'sent' as const,
-      };
-      saveMessage(message);
+      console.log('Sending message via', channel, 'to', candidates.length, 'candidates');
     });
 
     setSending(false);
@@ -205,7 +196,7 @@ export const Messaging: React.FC = () => {
                       </div>
                       <div className="text-sm text-[#8558ed]/70 flex items-center gap-1 mt-1">
                         <Send className="w-3 h-3" />
-                        TG: {candidate.telegramId}
+                        ID: {candidate.candidateId}
                       </div>
                     </motion.div>
                   ))}
@@ -223,7 +214,7 @@ export const Messaging: React.FC = () => {
                 <CardDescription className="text-[#8558ed]/60 font-medium">Choose a pre-defined template</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {Object.entries(MESSAGE_TEMPLATES).map(([key, template], idx) => (
+                {Object.entries(MESSAGE_TEMPLATES).map(([key, template]: [string, any], idx) => (
                   <motion.label
                     key={key}
                     initial={{ x: -20, opacity: 0 }}

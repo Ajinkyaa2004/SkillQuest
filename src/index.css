@@ -9,20 +9,31 @@
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
+  --primary: 174 100% 29%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
+  --secondary: 177 70% 41%;
   --secondary-foreground: 222.2 47.4% 11.2%;
   --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
+  --accent: 25 95% 53%;
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
+  --ring: 174 100% 29%;
+  --radius: 0.75rem;
+  
+  /* Playful Professional Theme Variables */
+  --game-teal: 174 100% 29%;
+  --game-orange: 25 95% 53%;
+  --game-purple: 262 83% 58%;
+  --playful-bg: linear-gradient(135deg, #f0fdfa 0%, #fff7ed 50%, #faf5ff 100%);
+  --card-shadow: 0 10px 25px -3px rgba(20, 184, 166, 0.1), 0 4px 6px -2px rgba(20, 184, 166, 0.05);
+  --badge-shadow: 0 4px 14px 0 rgba(168, 85, 247, 0.39);
+  --glow-teal: 0 0 20px rgba(20, 184, 166, 0.5);
+  --glow-orange: 0 0 20px rgba(249, 115, 22, 0.5);
+  --glow-purple: 0 0 20px rgba(168, 85, 247, 0.5);
 }
 
 * {
@@ -53,85 +64,147 @@ code {
   }
 }
 
-/* Sonner Toast Custom Styles */
+/* Sonner Toast Custom Styles - Simple & Clean */
 .sonner-toast {
-  border-radius: 12px !important;
-  box-shadow: 0 8px 24px rgba(133, 88, 237, 0.3) !important;
-  backdrop-filter: blur(10px) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   min-height: 48px !important;
-  max-height: 60px !important;
 }
 
-/* Default purple gradient for all toasts */
+/* Default toast */
 [data-sonner-toast] {
-  background: linear-gradient(135deg, #8558ed 0%, #b18aff 100%) !important;
-  color: white !important;
-  border: 2px solid #8558ed !important;
+  background: white !important;
+  color: #1f2937 !important;
+  border: 1px solid #e5e7eb !important;
 }
 
-/* Warning toasts - lighter purple */
+/* Warning toasts */
 [data-sonner-toast][data-type="warning"] {
-  background: linear-gradient(135deg, #9b6dff 0%, #c9a9ff 100%) !important;
-  color: white !important;
-  border: 2px solid #9b6dff !important;
+  background: white !important;
+  color: #92400e !important;
+  border-left: 4px solid #f59e0b !important;
 }
 
-/* Error/Termination toasts - RED ONLY */
+/* Error toasts */
 [data-sonner-toast][data-type="error"] {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  color: white !important;
-  border: 2px solid #dc2626 !important;
+  background: white !important;
+  color: #991b1b !important;
+  border-left: 4px solid #ef4444 !important;
 }
 
-/* Success toasts - purple with green accent */
+/* Success toasts */
 [data-sonner-toast][data-type="success"] {
-  background: linear-gradient(135deg, #7347d6 0%, #a179f0 100%) !important;
-  color: white !important;
-  border: 2px solid #7347d6 !important;
+  background: white !important;
+  color: #065f46 !important;
+  border-left: 4px solid #10b981 !important;
 }
 
-/* Info toasts - lighter purple */
+/* Info toasts */
 [data-sonner-toast][data-type="info"] {
-  background: linear-gradient(135deg, #b18aff 0%, #d4c5ff 100%) !important;
-  color: white !important;
-  border: 2px solid #b18aff !important;
+  background: white !important;
+  color: #1e40af !important;
+  border-left: 4px solid #3b82f6 !important;
 }
 
 [data-sonner-toast] [data-icon] {
-  font-size: 20px !important;
-  min-width: 20px !important;
+  color: inherit !important;
 }
 
 [data-sonner-toast] [data-content] {
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   font-size: 14px !important;
-  line-height: 1.4 !important;
-  padding: 0 !important;
+  line-height: 1.5 !important;
 }
 
 [data-sonner-toast] [data-close-button] {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: white !important;
-  border-radius: 6px !important;
-  width: 20px !important;
-  height: 20px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #6b7280 !important;
+  opacity: 0.6 !important;
 }
 
 [data-sonner-toast] [data-close-button]:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
+  opacity: 1 !important;
+  background: #f3f4f6 !important;
 }
 
 [data-sonner-toast] [data-button] {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: white !important;
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  color: #374151 !important;
   border-radius: 6px !important;
   padding: 4px 12px !important;
   font-size: 13px !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
 }
 
 [data-sonner-toast] [data-button]:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
+  background: #e5e7eb !important;
+}
+
+/* Playful Professional Theme - Gamification Styles */
+.game-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -4px rgba(20, 184, 166, 0.15);
+}
+
+.badge-completed {
+  background: linear-gradient(135deg, #14b8a6, #5eead4);
+  box-shadow: var(--badge-shadow);
+  animation: badge-pop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.badge-unlocked {
+  background: linear-gradient(135deg, #a855f7, #c084fc);
+  box-shadow: var(--badge-shadow);
+  animation: level-unlock 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.badge-next {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.playful-gradient {
+  background: var(--playful-bg);
+}
+
+.teal-glow {
+  box-shadow: var(--glow-teal);
+}
+
+.orange-glow {
+  box-shadow: var(--glow-orange);
+}
+
+.purple-glow {
+  box-shadow: var(--glow-purple);
+}
+
+/* Leaderboard styling */
+.leaderboard-gold {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: white;
+}
+
+.leaderboard-silver {
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  color: white;
+}
+
+.leaderboard-bronze {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  color: white;
+}
+
+.leaderboard-default {
+  background: linear-gradient(135deg, #14b8a6, #5eead4);
+  color: white;
 }

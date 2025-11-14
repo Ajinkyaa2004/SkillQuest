@@ -20,7 +20,6 @@ export interface ApplicantProfile {
   resumeUrl?: string;
   resumeLink?: string;
   websiteLink?: string;
-  telegramId: string;
   profileCompleted: boolean;
   createdAt: string;
 }
@@ -70,15 +69,6 @@ export interface LeaderboardEntry {
     unblockMe: number;
     waterCapacity: number;
   };
-}
-
-export interface Message {
-  id: string;
-  type: 'email' | 'whatsapp' | 'telegram';
-  template: string;
-  recipients: string[];
-  sentAt: string;
-  status: 'sent' | 'pending' | 'failed';
 }
 
 export interface ChatMessage {

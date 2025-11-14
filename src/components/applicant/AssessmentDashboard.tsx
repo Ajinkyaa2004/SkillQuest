@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileByUserId, getAssessmentByUserId, saveAssessment } from '@/lib/storage';
 import { Assessment, GameType } from '@/types';
-import { Lock, Play, CheckCircle, Trophy, LogOut, Bomb, Car, Droplet, Sparkles, Target, Zap, Star, Flame, TrendingUp, Rocket, Dumbbell, Flag, Clock, XCircle } from 'lucide-react';
-import { generateCandidateId } from '@/lib/utils';
-import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+import { Trophy, CheckCircle, Clock, LogOut, Sparkles, Zap, Star, Target, Flame, Flag, XCircle, Play, Lock, Bomb, Car, Droplet, Rocket, Dumbbell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Confetti component
 const Confetti: React.FC = () => {
@@ -15,7 +14,7 @@ const Confetti: React.FC = () => {
     id: i,
     left: Math.random() * 100,
     animationDelay: Math.random() * 3,
-    backgroundColor: ['#8558ed', '#b18aff', '#7347d6', '#a179f0', '#9b6dff'][Math.floor(Math.random() * 5)],
+    backgroundColor: ['rgb(168, 85, 247)', 'rgb(249, 115, 22)', 'rgb(20, 184, 166)', 'rgb(34, 197, 94)', 'rgb(249, 115, 22)', 'rgb(20, 184, 166)'][Math.floor(Math.random() * 6)],
   }));
 
   return (
@@ -140,40 +139,12 @@ const FloatingIcon: React.FC<{ Icon: React.ElementType; delay: number; x: string
   </motion.div>
 );
 
-// 3D Tilt Card Component
-const TiltCard: React.FC<{ children: React.ReactNode; disabled?: boolean }> = ({ children, disabled }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-100, 100], [10, -10]);
-  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (disabled) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    x.set(event.clientX - centerX);
-    y.set(event.clientY - centerY);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    x.set(0);
-    y.set(0);
-  };
-
+// Subtle Hover Card Component
+const SubtleHoverCard: React.FC<{ children: React.ReactNode; disabled?: boolean }> = ({ children, disabled }) => {
   return (
     <motion.div
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => !disabled && setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        rotateX: isHovered ? rotateX : 0,
-        rotateY: isHovered ? rotateY : 0,
-        transformStyle: "preserve-3d",
-      }}
-      transition={{ type: "spring", stiffness: 200, damping: 25 }}
+      whileHover={!disabled ? { y: -2, scale: 1.01 } : {}}
+      transition={{ type: "spring", stiffness: 400, damping: 25, duration: 0.15 }}
     >
       {children}
     </motion.div>
@@ -188,6 +159,7 @@ export const AssessmentDashboard: React.FC = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
+  const [showRetryInfo, setShowRetryInfo] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -282,6 +254,10 @@ export const AssessmentDashboard: React.FC = () => {
     assessment?.games['unblock-me'] !== null &&
     assessment?.games['water-capacity'] !== null;
 
+  const hasFailedGame = assessment?.games.minesweeper?.failed ||
+    assessment?.games['unblock-me']?.failed ||
+    assessment?.games['water-capacity']?.failed;
+
   const games = [
     {
       type: 'minesweeper' as GameType,
@@ -289,15 +265,8 @@ export const AssessmentDashboard: React.FC = () => {
       description: 'Test your risk assessment and deductive logic',
       skill: 'Risk Assessment & Deductive Logic',
       Icon: Bomb,
-      color: 'from-[#8558ed] to-[#b18aff]',
-    },
-    {
-      type: 'unblock-me' as GameType,
-      title: 'Unblock Me',
-      description: 'Challenge your spatial reasoning and planning',
-      skill: 'Spatial Reasoning & Planning',
-      Icon: Car,
-      color: 'from-[#7347d6] to-[#a179f0]',
+      color: 'from-game-purple-700 to-game-purple-500',
+      available: true,
     },
     {
       type: 'water-capacity' as GameType,
@@ -305,7 +274,17 @@ export const AssessmentDashboard: React.FC = () => {
       description: 'Solve logical sequencing and optimization puzzles',
       skill: 'Logical Sequencing & Optimization',
       Icon: Droplet,
-      color: 'from-[#9b6dff] to-[#c9a9ff]',
+      color: 'from-game-teal-500 to-game-teal-400',
+      available: true,
+    },
+    {
+      type: 'unblock-me' as GameType,
+      title: 'Unblock Me',
+      description: 'Challenge your spatial reasoning and planning',
+      skill: 'Spatial Reasoning & Planning',
+      Icon: Car,
+      color: 'from-orange-500 to-orange-400',
+      available: false,
     },
   ];
 
@@ -328,6 +307,7 @@ export const AssessmentDashboard: React.FC = () => {
     if (completedGames === 0) return { text: "Let's start your journey!", Icon: Rocket };
     if (completedGames === 1) return { text: "Great start! Keep going!", Icon: Dumbbell };
     if (completedGames === 2) return { text: "Almost there! One more to go!", Icon: Target };
+    if (hasFailedGame) return { text: "Review your performance and try again!", Icon: Target };
     return { text: "Amazing! You've completed all games!", Icon: Trophy };
   };
 
@@ -353,15 +333,35 @@ export const AssessmentDashboard: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: isExiting ? 0 : 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] p-4 relative overflow-hidden"
+      className="min-h-screen playful-gradient p-4 relative overflow-hidden"
     >
+      {/* Floating Background Orbs */}
+      <div className="absolute -z-10 top-0 left-0 w-full h-full overflow-hidden">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute w-96 h-96 bg-gradient-to-br from-game-teal-400/30 to-green-400/20 rounded-full blur-3xl top-10 -left-20"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute w-80 h-80 bg-gradient-to-br from-orange-400/25 to-game-teal-400/25 rounded-full blur-3xl bottom-10 -right-20"
+        />
+      </div>
+      
       {/* Floating background icons */}
-      <FloatingIcon Icon={Sparkles} delay={0} x="10%" y="15%" color="text-[#8558ed]" />
-      <FloatingIcon Icon={Target} delay={1} x="85%" y="20%" color="text-[#b18aff]" />
-      <FloatingIcon Icon={Zap} delay={2} x="15%" y="70%" color="text-[#8558ed]" />
-      <FloatingIcon Icon={Star} delay={3} x="90%" y="75%" color="text-[#b18aff]" />
-      <FloatingIcon Icon={Flame} delay={4} x="50%" y="10%" color="text-[#8558ed]" />
-      <FloatingIcon Icon={Trophy} delay={5} x="20%" y="85%" color="text-[#b18aff]" />
+      <FloatingIcon Icon={Sparkles} delay={0} x="10%" y="15%" color="text-game-teal-500" />
+      <FloatingIcon Icon={Target} delay={1} x="85%" y="20%" color="text-orange-500" />
+      <FloatingIcon Icon={Zap} delay={2} x="15%" y="70%" color="text-game-purple-500" />
+      <FloatingIcon Icon={Star} delay={3} x="90%" y="75%" color="text-game-teal-400" />
+      <FloatingIcon Icon={Flame} delay={4} x="50%" y="10%" color="text-orange-400" />
+      <FloatingIcon Icon={Trophy} delay={5} x="20%" y="85%" color="text-green-500" />
       
       {/* Confetti animation */}
       {showConfetti && <Confetti />}
@@ -374,8 +374,8 @@ export const AssessmentDashboard: React.FC = () => {
           className="flex justify-between items-center mb-6"
         >
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] bg-clip-text text-transparent">
-              Cognitive Assessment
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-game-purple-700 via-game-purple-500 to-game-purple-400 bg-clip-text text-transparent drop-shadow-lg">
+              IFA SkillQuest Assessment
             </h1>
             <motion.p 
               className="text-gray-600 mt-2 flex items-center gap-2"
@@ -383,20 +383,20 @@ export const AssessmentDashboard: React.FC = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              Welcome, <span className="font-semibold">{profile.name}</span> | Candidate ID: <span className="font-mono font-semibold text-[#8558ed]">{profile.candidateId}</span>
+              Welcome, <span className="font-semibold">{profile.name}</span> | Candidate ID: <span className="font-mono font-semibold text-game-purple-600">{profile.candidateId}</span>
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="text-[#8558ed] font-semibold mt-1 flex items-center gap-2"
+              className="text-orange-600 font-semibold mt-1 flex items-center gap-2"
             >
               <motivationalMessage.Icon className="w-4 h-4" />
               {motivationalMessage.text}
             </motion.p>
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button variant="outline" onClick={logout} className="border-2">
+            <Button variant="outline" onClick={logout} className="border-2 border-game-purple-500/30 text-game-purple-700 hover:bg-game-purple-50">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
@@ -411,24 +411,24 @@ export const AssessmentDashboard: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.25 }}
             className="mb-6"
           >
-            <Card className="bg-gradient-to-r from-[#8558ed]/10 to-[#b18aff]/10 border-2 border-[#8558ed]/20">
+            <Card className="bg-gradient-to-r from-game-purple-500/10 to-game-purple-400/10 border-2 border-game-purple-500/20">
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8558ed] to-[#b18aff] flex items-center justify-center"
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-game-purple-700 to-game-purple-400 flex items-center justify-center"
                     >
                       <Clock className="w-5 h-5 text-white" />
                     </motion.div>
                     <div>
-                      <p className="text-sm font-semibold text-[#8558ed]">Estimated Time Remaining</p>
+                      <p className="text-sm font-semibold text-game-purple-700">Estimated Time Remaining</p>
                       <p className="text-xs text-gray-600">Complete all games to finish your assessment</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold bg-gradient-to-r from-[#8558ed] to-[#b18aff] bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold bg-gradient-to-r from-game-purple-700 to-game-purple-400 bg-clip-text text-transparent">
                       ~{estimatedTimeRemaining}
                     </p>
                     <p className="text-xs text-gray-600">minutes</p>
@@ -446,12 +446,12 @@ export const AssessmentDashboard: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mb-8"
         >
-          <Card className="bg-white/80 backdrop-blur-sm border-2 border-[#8558ed]/20">
+          <Card className="bg-white/80 backdrop-blur-sm border-2 border-game-purple-500/20 shadow-lg shadow-game-purple-500/10">
             <CardContent className="pt-6">
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold text-gray-800">Assessment Progress</h3>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-[#8558ed] to-[#b18aff] bg-clip-text text-transparent">
+                  <span className="text-2xl font-bold bg-gradient-to-r from-game-purple-700 to-game-purple-400 bg-clip-text text-transparent">
                     {completedGames}/{games.length}
                   </span>
                 </div>
@@ -460,7 +460,7 @@ export const AssessmentDashboard: React.FC = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPercentage}%` }}
                     transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-                    className="h-full bg-gradient-to-r from-[#8558ed] via-[#b18aff] to-[#8558ed] rounded-full relative"
+                    className="h-full bg-gradient-to-r from-game-purple-700 via-game-purple-500 to-game-purple-400 rounded-full relative"
                   >
                     <motion.div
                       animate={{
@@ -514,16 +514,16 @@ export const AssessmentDashboard: React.FC = () => {
         </motion.div>
 
         <AnimatePresence>
-          {allGamesCompleted && (
+          {allGamesCompleted && !hasFailedGame && (
             <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0, rotate: 180 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.6 }}
             >
-              <Card className="mb-6 bg-gradient-to-r from-[#f3f0fc] to-[#faf9fc] border-2 border-[#8558ed]/30 shadow-lg">
+              <Card className="mb-6 bg-gradient-to-r from-game-teal-500/5 via-green-500/5 to-orange-500/5 border-2 border-game-teal-500/30 shadow-lg shadow-game-teal-500/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-[#8558ed]">
+                  <CardTitle className="flex items-center text-game-teal-700">
                     <motion.div
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -538,7 +538,7 @@ export const AssessmentDashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                    <Button onClick={viewResults} className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white font-semibold py-6 rounded-lg shadow-lg shadow-[#8558ed]/30 transition-all duration-300 hover:shadow-xl hover:shadow-[#8558ed]/40">
+                    <Button onClick={viewResults} className="bg-game-purple-600 hover:bg-game-purple-700 text-white font-bold py-6 rounded-2xl shadow-lg shadow-game-purple-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-game-purple-500/40">
                       <Trophy className="w-4 h-4 mr-2" />
                       View Results
                     </Button>
@@ -563,7 +563,7 @@ export const AssessmentDashboard: React.FC = () => {
             },
           }}
         >
-          {games.map((game, index) => {
+          {games.map((game, _) => {
             const unlocked = isGameUnlocked(game.type);
             const completed = isGameCompleted(game.type);
             const trialUnlocked = isTrialUnlocked(game.type);
@@ -579,12 +579,30 @@ export const AssessmentDashboard: React.FC = () => {
                 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <TiltCard disabled={!unlocked}>
-                  <Card className={`${!unlocked ? 'opacity-60' : ''} border-2 border-[#8558ed]/20 hover:shadow-2xl hover:shadow-[#8558ed]/20 transition-all duration-500 bg-white/90 backdrop-blur-xl relative overflow-hidden group ${
-                    game.type === nextGame && !completed ? 'ring-2 ring-[#8558ed] ring-offset-2' : ''
+                <SubtleHoverCard disabled={!unlocked || !game.available}>
+                  <Card className={`${!unlocked || !game.available ? 'opacity-60' : ''} border-2 border-game-purple-500/20 hover:shadow-lg hover:shadow-game-purple-500/10 transition-all duration-300 bg-white/90 backdrop-blur-xl relative overflow-hidden group ${
+                    game.type === nextGame && !completed ? 'ring-2 ring-game-purple-500 ring-offset-2' : ''
                   }`}>
+                    {/* Coming Soon Ribbon */}
+                    {!game.available && (
+                      <motion.div
+                        className="absolute top-3 right-3 z-30"
+                        initial={{ scale: 0, rotate: 0 }}
+                        animate={{ scale: 1, rotate: 12 }}
+                        transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 15 }}
+                      >
+                        <motion.div
+                          className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 text-white text-sm font-extrabold px-4 py-2 rounded-full shadow-2xl border-2 border-white"
+                          animate={{ scale: [1, 1.08, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          Coming Soon
+                        </motion.div>
+                      </motion.div>
+                    )}
+                    
                     {/* Next Up Badge */}
-                    {game.type === nextGame && !completed && (
+                    {game.type === nextGame && !completed && game.available && (
                       <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
@@ -600,7 +618,7 @@ export const AssessmentDashboard: React.FC = () => {
                             repeat: Infinity,
                             ease: 'easeInOut',
                           }}
-                          className="bg-gradient-to-r from-[#8558ed] to-[#b18aff] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1"
+                          className="bg-gradient-to-r from-game-purple-700 to-game-purple-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1"
                         >
                           <Flag className="w-3 h-3" />
                           Next Up!
@@ -609,7 +627,7 @@ export const AssessmentDashboard: React.FC = () => {
                     )}
 
                     {/* Gradient border glow on hover */}
-                    <div className="absolute -inset-0.5 bg-gradient-to-br from-[#8558ed] to-[#b18aff] rounded-2xl opacity-0 group-hover:opacity-75 blur transition-all duration-700 ease-out" />
+                    <div className="absolute -inset-0.5 bg-gradient-to-br from-game-purple-700 to-game-purple-400 rounded-2xl opacity-0 group-hover:opacity-75 blur transition-all duration-700 ease-out" />
                     
                     {/* Pulse effect for next game */}
                     {game.type === nextGame && !completed && (
@@ -623,7 +641,7 @@ export const AssessmentDashboard: React.FC = () => {
                           repeat: Infinity,
                           ease: 'easeInOut',
                         }}
-                        className="absolute -inset-0.5 bg-gradient-to-br from-[#8558ed] to-[#b18aff] rounded-2xl blur-md"
+                        className="absolute -inset-0.5 bg-gradient-to-br from-game-purple-700 to-game-purple-500 rounded-2xl blur-md"
                       />
                     )}
                     
@@ -636,10 +654,10 @@ export const AssessmentDashboard: React.FC = () => {
                           whileHover={{ scale: 1.1, rotate: 5 }}
                           className={`w-16 h-16 rounded-full bg-gradient-to-br ${game.color} flex items-center justify-center shadow-lg relative`}
                         >
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#8558ed] to-[#b18aff] animate-ping opacity-20" />
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-game-purple-700 to-game-purple-400 animate-ping opacity-20" />
                           <GameIcon className="w-8 h-8 text-white relative z-10" />
                         </motion.div>
-                        {!unlocked && (
+                        {!unlocked && game.available && (
                           <motion.div
                             animate={{ rotate: [0, -10, 10, -10, 0] }}
                             transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
@@ -685,7 +703,7 @@ export const AssessmentDashboard: React.FC = () => {
                       className={`p-3 rounded-md border ${
                         score.failed 
                           ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-300'
-                          : 'bg-gradient-to-r from-[#f3f0fc] to-[#faf9fc] border-[#8558ed]/20'
+                          : 'bg-gradient-to-r from-game-purple-500/5 to-game-purple-400/5 border-game-purple-500/20'
                       }`}
                     >
                       {score.failed ? (
@@ -699,13 +717,33 @@ export const AssessmentDashboard: React.FC = () => {
                               {score.failureReason}
                             </div>
                           )}
+                          <div className="mt-2">
+                            <button
+                              onClick={() => setShowRetryInfo(prev => ({ ...prev, [game.type]: !prev[game.type] }))}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline font-medium"
+                            >
+                              Click here to know more
+                            </button>
+                            {showRetryInfo[game.type] && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800"
+                              >
+                                You can replay this game in the next <strong>7 days</strong>. 
+                                Until then, this game will be unavailable for you to attempt again.
+                              </motion.div>
+                            )}
+                          </div>
                         </>
                       ) : (
                         <>
-                          <div className="text-sm font-semibold text-[#8558ed]">
+                          <div className="text-sm font-semibold text-game-purple-700">
                             Score: <AnimatedCounter value={score.puzzlesCompleted} duration={1.5} /> puzzles completed
                           </div>
-                          <div className="text-xs text-[#7347d6]">
+                          <div className="text-xs text-game-purple-600">
                             Time: {Math.floor(score.timeSpent / 60)}:{(score.timeSpent % 60).toString().padStart(2, '0')}
                           </div>
                         </>
@@ -717,16 +755,21 @@ export const AssessmentDashboard: React.FC = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         onClick={() => startGame(game.type, false)}
-                        disabled={!unlocked || completed}
+                        disabled={!unlocked || completed || !game.available}
                         className={`w-full ${
                           completed 
-                            ? 'bg-[#8558ed]/10 text-[#8558ed] border-[#8558ed]/30' 
-                            : !unlocked 
+                            ? 'bg-game-purple-500/10 text-game-purple-700 border-game-purple-500/30' 
+                            : !unlocked || !game.available
                             ? 'bg-gray-100 text-gray-400 border-gray-300' 
-                            : 'bg-gradient-to-r from-[#8558ed] to-[#b18aff] hover:from-[#7347d6] hover:to-[#a179f0] text-white'
+                            : 'bg-gradient-to-r from-game-purple-700 via-game-purple-600 to-game-purple-500 hover:from-game-purple-800 hover:via-game-purple-700 hover:to-game-purple-600 text-white font-bold rounded-xl shadow-lg shadow-game-purple-500/30 hover:shadow-xl hover:shadow-game-purple-500/40'
                         }`}
                       >
-                      {completed ? (
+                      {!game.available ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2" />
+                          Coming Soon
+                        </>
+                      ) : completed ? (
                         <>
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Completed
@@ -748,11 +791,16 @@ export const AssessmentDashboard: React.FC = () => {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         onClick={() => startGame(game.type, true)}
-                        disabled={!trialUnlocked}
+                        disabled={!trialUnlocked || !game.available}
                         variant="outline"
                         className="w-full"
                       >
-                      {!trialUnlocked ? (
+                      {!game.available ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2" />
+                          Coming Soon
+                        </>
+                      ) : !trialUnlocked ? (
                         <>
                           <Lock className="w-4 h-4 mr-2" />
                           Trial Locked
@@ -769,7 +817,7 @@ export const AssessmentDashboard: React.FC = () => {
                 </CardContent>
                     </div>
               </Card>
-            </TiltCard>
+            </SubtleHoverCard>
           </motion.div>
             );
           })}
@@ -780,10 +828,10 @@ export const AssessmentDashboard: React.FC = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          <Card className="bg-white/80 backdrop-blur-sm border-2 border-[#8558ed]/20">
+          <Card className="bg-white/80 backdrop-blur-sm border-2 border-game-purple-500/20 shadow-lg shadow-game-purple-500/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#8558ed]" />
+                <Sparkles className="w-5 h-5 text-game-purple-600" />
                 Assessment Rules
               </CardTitle>
             </CardHeader>
