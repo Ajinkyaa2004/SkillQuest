@@ -42,11 +42,11 @@ export const GameWrapper: React.FC = () => {
     }
 
     // Check if game is unlocked
-    if (gameType === 'unblock-me' && !assessment.games.minesweeper) {
+    if (gameType === 'water-capacity' && !assessment.games.minesweeper) {
       navigate('/applicant/assessment');
       return;
     }
-    if (gameType === 'water-capacity' && !assessment.games['unblock-me']) {
+    if (gameType === 'unblock-me' && !assessment.games['water-capacity']) {
       navigate('/applicant/assessment');
       return;
     }
@@ -168,17 +168,29 @@ export const GameWrapper: React.FC = () => {
 
     assessment.games[gameType] = gameScore;
 
-    // Calculate total score if all games completed
-    if (assessment.games.minesweeper && assessment.games['unblock-me'] && assessment.games['water-capacity']) {
+    console.log('GameWrapper - After setting game score:');
+    console.log('Current game:', gameType);
+    console.log('Minesweeper exists:', !!assessment.games.minesweeper);
+    console.log('Water Capacity exists:', !!assessment.games['water-capacity']);
+    console.log('Assessment games:', assessment.games);
+
+    // Calculate total score if all available games completed (Minesweeper and Water Capacity)
+    if (assessment.games.minesweeper && assessment.games['water-capacity']) {
+      console.log('Both games completed! Setting completedAt and calculating total score');
       assessment.totalScore = calculateTotalScore(
         assessment.games.minesweeper.puzzlesCompleted,
-        assessment.games['unblock-me'].puzzlesCompleted,
+        0, // Unblock Me not implemented yet
         assessment.games['water-capacity'].puzzlesCompleted
       );
       assessment.completedAt = new Date().toISOString();
+      console.log('Total score:', assessment.totalScore);
+      console.log('CompletedAt:', assessment.completedAt);
+    } else {
+      console.log('Not all games completed yet');
     }
 
     saveAssessment(assessment);
+    console.log('Assessment saved to localStorage');
     exitFullscreen();
     navigate('/applicant/assessment');
   }, [user, gameType, timeRemaining, navigate, isTrial]);

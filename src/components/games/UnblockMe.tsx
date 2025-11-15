@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Flame, Car, MousePointer, Keyboard, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Block {
@@ -204,7 +203,6 @@ const PREDEFINED_PUZZLES: Block[][] = [
 ];
 
 export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining, isTrialMode = false }) => {
-  const navigate = useNavigate();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
@@ -218,9 +216,8 @@ export const UnblockMe: React.FC<UnblockMeProps> = ({ onComplete, timeRemaining,
     maxViolations: 3,
     enabled: !isTrialMode,
     onDisqualified: () => {
-      // Mark as failed and navigate to assessment page
+      // Mark as failed - GameWrapper will handle navigation after saving
       onComplete(puzzlesCompleted, totalMoves, true, 'Disqualified due to tab switching violations');
-      navigate('/applicant/assessment');
     },
   });
 

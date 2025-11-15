@@ -210,11 +210,11 @@ export const AssessmentDashboard: React.FC = () => {
     if (!assessment) return false;
     
     if (gameType === 'minesweeper') return true;
-    if (gameType === 'unblock-me') {
+    if (gameType === 'water-capacity') {
       return assessment.games.minesweeper !== null;
     }
-    if (gameType === 'water-capacity') {
-      return assessment.games['unblock-me'] !== null;
+    if (gameType === 'unblock-me') {
+      return assessment.games['water-capacity'] !== null;
     }
     return false;
   };
@@ -223,11 +223,11 @@ export const AssessmentDashboard: React.FC = () => {
     if (!assessment) return false;
     
     if (gameType === 'minesweeper') return true;
-    if (gameType === 'unblock-me') {
+    if (gameType === 'water-capacity') {
       return assessment.games.minesweeper !== null;
     }
-    if (gameType === 'water-capacity') {
-      return assessment.games['unblock-me'] !== null;
+    if (gameType === 'unblock-me') {
+      return assessment.games['water-capacity'] !== null;
     }
     return false;
   };
@@ -244,6 +244,11 @@ export const AssessmentDashboard: React.FC = () => {
   };
 
   const viewResults = () => {
+    console.log('View Results clicked');
+    console.log('Assessment:', assessment);
+    console.log('Minesweeper:', assessment?.games.minesweeper);
+    console.log('Water Capacity:', assessment?.games['water-capacity']);
+    console.log('Completed At:', assessment?.completedAt);
     setIsExiting(true);
     setTimeout(() => {
       navigate('/applicant/results');
@@ -251,11 +256,9 @@ export const AssessmentDashboard: React.FC = () => {
   };
 
   const allGamesCompleted = assessment?.games.minesweeper !== null &&
-    assessment?.games['unblock-me'] !== null &&
     assessment?.games['water-capacity'] !== null;
 
   const hasFailedGame = assessment?.games.minesweeper?.failed ||
-    assessment?.games['unblock-me']?.failed ||
     assessment?.games['water-capacity']?.failed;
 
   const games = [
@@ -295,8 +298,8 @@ export const AssessmentDashboard: React.FC = () => {
   // Get next game to play
   const getNextGame = (): GameType | null => {
     if (!isGameCompleted('minesweeper')) return 'minesweeper';
-    if (!isGameCompleted('unblock-me')) return 'unblock-me';
     if (!isGameCompleted('water-capacity')) return 'water-capacity';
+    if (!isGameCompleted('unblock-me')) return 'unblock-me';
     return null;
   };
 
@@ -305,10 +308,10 @@ export const AssessmentDashboard: React.FC = () => {
   // Motivational messages based on progress
   const getMotivationalMessage = () => {
     if (completedGames === 0) return { text: "Let's start your journey!", Icon: Rocket };
-    if (completedGames === 1) return { text: "Great start! Keep going!", Icon: Dumbbell };
-    if (completedGames === 2) return { text: "Almost there! One more to go!", Icon: Target };
+    if (completedGames === 1) return { text: "Excellent! One more game to go!", Icon: Dumbbell };
+    if (completedGames === 2 && !allGamesCompleted) return { text: "Unblock Me coming soon! Stay tuned!", Icon: Target };
     if (hasFailedGame) return { text: "Review your performance and try again!", Icon: Target };
-    return { text: "Amazing! You've completed all games!", Icon: Trophy };
+    return { text: "Fantastic! You've completed all available games!", Icon: Trophy };
   };
 
   const motivationalMessage = getMotivationalMessage();
@@ -533,7 +536,7 @@ export const AssessmentDashboard: React.FC = () => {
                     Assessment Complete!
                   </CardTitle>
                   <CardDescription>
-                    Congratulations! You have completed all three games. Click below to view your results.
+                    Congratulations! You have successfully completed all available games. Click below to view your results.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -694,6 +697,34 @@ export const AssessmentDashboard: React.FC = () => {
                   <div className="text-sm">
                     <strong>Duration:</strong> 5 minutes
                   </div>
+                  
+                  {/* Game Rules - Only for available games */}
+                  {game.available && (
+                    <div className="text-xs bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 space-y-1.5">
+                      <div className="font-semibold text-blue-900 mb-1.5 flex items-center gap-1">
+                        <Target className="w-3.5 h-3.5" />
+                        Quick Rules:
+                      </div>
+                      {game.type === 'minesweeper' && (
+                        <ul className="space-y-1 text-blue-800">
+                          <li>• Click cells to reveal safe zones</li>
+                          <li>• Numbers show nearby mines</li>
+                          <li>• Flag suspected mines (right-click)</li>
+                          <li>• Complete levels to increase score</li>
+                          <li>• Avoid clicking on mines!</li>
+                        </ul>
+                      )}
+                      {game.type === 'water-capacity' && (
+                        <ul className="space-y-1 text-blue-800">
+                          <li>• Pour water between jugs</li>
+                          <li>• Match the target amount exactly</li>
+                          <li>• Use minimum moves for efficiency</li>
+                          <li>• Empty or fill jugs completely</li>
+                          <li>• Think ahead to solve faster!</li>
+                        </ul>
+                      )}
+                    </div>
+                  )}
                   
                   {completed && score && (
                     <motion.div

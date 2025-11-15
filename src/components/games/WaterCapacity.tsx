@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Flame, Droplet, Droplets, ArrowRightLeft, CheckCircle2, MousePointer } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles, Zap, Star, Target, Droplet, Droplets, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
 import { useTabSwitchDetection } from '@/hooks/useTabSwitchDetection';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Jug {
@@ -24,21 +23,119 @@ interface WaterCapacityProps {
   isTrialMode?: boolean;
 }
 
-const PUZZLES: Puzzle[] = [
+const TRIAL_PUZZLES: Puzzle[] = [
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 4, color: 'bg-cyan-400' }], target: 2, targetJug: 1 },
+  { jugs: [{ capacity: 2, color: 'bg-blue-400' }, { capacity: 6, color: 'bg-cyan-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 5, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }], target: 3, targetJug: 0 },
+  { jugs: [{ capacity: 6, color: 'bg-blue-400' }, { capacity: 9, color: 'bg-cyan-400' }], target: 5, targetJug: 1 },
   { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }], target: 4, targetJug: 1 },
-  { jugs: [{ capacity: 4, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }], target: 5, targetJug: 1 },
-  { jugs: [{ capacity: 2, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }], target: 1, targetJug: 0 },
-  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 8, color: 'bg-cyan-400' }], target: 7, targetJug: 1 },
-  { jugs: [{ capacity: 5, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }], target: 6, targetJug: 1 },
-  { jugs: [{ capacity: 4, color: 'bg-blue-400' }, { capacity: 9, color: 'bg-cyan-400' }], target: 6, targetJug: 1 },
-  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }], target: 7, targetJug: 1 },
-  { jugs: [{ capacity: 6, color: 'bg-blue-400' }, { capacity: 8, color: 'bg-cyan-400' }], target: 4, targetJug: 0 },
-  { jugs: [{ capacity: 5, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }], target: 8, targetJug: 1 },
-  { jugs: [{ capacity: 7, color: 'bg-blue-400' }, { capacity: 9, color: 'bg-cyan-400' }], target: 5, targetJug: 0 },
+];
+
+// Main puzzles with 100 distinct levels generated for challenge
+const MAIN_PUZZLES: Puzzle[] = [
+  { jugs: [{ capacity: 4, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 23, color: 'bg-purple-400' }], target: 1, targetJug: 0 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 11, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 1, targetJug: 0 },
+  { jugs: [{ capacity: 25, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }], target: 2, targetJug: 2 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 4, color: 'bg-cyan-400' }, { capacity: 12, color: 'bg-purple-400' }], target: 3, targetJug: 1 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 8, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }], target: 15, targetJug: 0 },
+  { jugs: [{ capacity: 11, color: 'bg-blue-400' }, { capacity: 23, color: 'bg-cyan-400' }, { capacity: 5, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 18, targetJug: 1 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 23, color: 'bg-cyan-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 12, color: 'bg-blue-400' }, { capacity: 13, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 1, targetJug: 2 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 21, color: 'bg-purple-400' }, { capacity: 6, color: 'bg-pink-400' }], target: 8, targetJug: 0 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 25, color: 'bg-cyan-400' }, { capacity: 21, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 15, targetJug: 0 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }, { capacity: 19, color: 'bg-purple-400' }, { capacity: 23, color: 'bg-pink-400' }], target: 18, targetJug: 2 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }], target: 12, targetJug: 1 },
+  { jugs: [{ capacity: 21, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }, { capacity: 13, color: 'bg-pink-400' }], target: 17, targetJug: 0 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }], target: 2, targetJug: 2 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }], target: 7, targetJug: 0 },
+  { jugs: [{ capacity: 17, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }, { capacity: 3, color: 'bg-purple-400' }], target: 3, targetJug: 2 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 18, color: 'bg-cyan-400' }, { capacity: 13, color: 'bg-purple-400' }], target: 2, targetJug: 1 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 9, color: 'bg-cyan-400' }, { capacity: 11, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 7, targetJug: 3 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 13, color: 'bg-purple-400' }, { capacity: 7, color: 'bg-pink-400' }], target: 12, targetJug: 2 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 17, color: 'bg-cyan-400' }, { capacity: 10, color: 'bg-purple-400' }], target: 8, targetJug: 2 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 4, color: 'bg-cyan-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 6, targetJug: 2 },
+  { jugs: [{ capacity: 11, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }, { capacity: 18, color: 'bg-purple-400' }], target: 4, targetJug: 0 },
+  { jugs: [{ capacity: 11, color: 'bg-blue-400' }, { capacity: 3, color: 'bg-cyan-400' }, { capacity: 23, color: 'bg-purple-400' }], target: 1, targetJug: 1 },
+  { jugs: [{ capacity: 20, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 23, color: 'bg-purple-400' }], target: 11, targetJug: 2 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 16, color: 'bg-cyan-400' }, { capacity: 13, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 12, targetJug: 3 },
+  { jugs: [{ capacity: 6, color: 'bg-blue-400' }, { capacity: 15, color: 'bg-cyan-400' }], target: 10, targetJug: 1 },
+  { jugs: [{ capacity: 19, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 6, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }], target: 4, targetJug: 0 },
+  { jugs: [{ capacity: 17, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 9, color: 'bg-purple-400' }], target: 14, targetJug: 0 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }], target: 1, targetJug: 0 },
+  { jugs: [{ capacity: 13, color: 'bg-blue-400' }, { capacity: 21, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 12, targetJug: 1 },
+  { jugs: [{ capacity: 20, color: 'bg-blue-400' }, { capacity: 22, color: 'bg-cyan-400' }], target: 8, targetJug: 0 },
+  { jugs: [{ capacity: 12, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }], target: 8, targetJug: 0 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }, { capacity: 6, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 2, targetJug: 2 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 21, color: 'bg-purple-400' }], target: 8, targetJug: 1 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }], target: 2, targetJug: 1 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 25, color: 'bg-cyan-400' }, { capacity: 20, color: 'bg-purple-400' }, { capacity: 12, color: 'bg-pink-400' }], target: 4, targetJug: 2 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 6, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 9, targetJug: 0 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 18, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 17, targetJug: 1 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }, { capacity: 22, color: 'bg-purple-400' }], target: 21, targetJug: 0 },
+  { jugs: [{ capacity: 17, color: 'bg-blue-400' }, { capacity: 6, color: 'bg-cyan-400' }], target: 3, targetJug: 0 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 10, color: 'bg-cyan-400' }, { capacity: 20, color: 'bg-purple-400' }, { capacity: 14, color: 'bg-pink-400' }], target: 5, targetJug: 3 },
+  { jugs: [{ capacity: 17, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 6, color: 'bg-purple-400' }, { capacity: 22, color: 'bg-pink-400' }], target: 3, targetJug: 0 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }], target: 7, targetJug: 0 },
+  { jugs: [{ capacity: 20, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }, { capacity: 5, color: 'bg-pink-400' }], target: 18, targetJug: 0 },
+  { jugs: [{ capacity: 21, color: 'bg-blue-400' }, { capacity: 15, color: 'bg-cyan-400' }], target: 3, targetJug: 0 },
+  { jugs: [{ capacity: 12, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 5, targetJug: 2 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 4, color: 'bg-cyan-400' }, { capacity: 6, color: 'bg-purple-400' }], target: 6, targetJug: 0 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 12, color: 'bg-purple-400' }, { capacity: 6, color: 'bg-pink-400' }], target: 5, targetJug: 3 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }, { capacity: 21, color: 'bg-purple-400' }, { capacity: 14, color: 'bg-pink-400' }], target: 17, targetJug: 1 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }], target: 14, targetJug: 1 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }], target: 12, targetJug: 1 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 3, targetJug: 0 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 3, color: 'bg-cyan-400' }, { capacity: 5, color: 'bg-purple-400' }], target: 8, targetJug: 0 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 18, color: 'bg-cyan-400' }], target: 13, targetJug: 1 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 3, color: 'bg-cyan-400' }, { capacity: 15, color: 'bg-purple-400' }, { capacity: 7, color: 'bg-pink-400' }], target: 11, targetJug: 2 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 21, color: 'bg-cyan-400' }, { capacity: 5, color: 'bg-purple-400' }], target: 15, targetJug: 0 },
+  { jugs: [{ capacity: 11, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }], target: 3, targetJug: 1 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }, { capacity: 12, color: 'bg-purple-400' }], target: 4, targetJug: 1 },
+  { jugs: [{ capacity: 25, color: 'bg-blue-400' }, { capacity: 13, color: 'bg-cyan-400' }, { capacity: 9, color: 'bg-purple-400' }], target: 19, targetJug: 0 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 4, color: 'bg-cyan-400' }, { capacity: 13, color: 'bg-purple-400' }], target: 1, targetJug: 1 },
+  { jugs: [{ capacity: 13, color: 'bg-blue-400' }, { capacity: 6, color: 'bg-cyan-400' }, { capacity: 23, color: 'bg-purple-400' }], target: 5, targetJug: 1 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 23, color: 'bg-cyan-400' }], target: 11, targetJug: 1 },
+  { jugs: [{ capacity: 17, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 6, color: 'bg-purple-400' }], target: 7, targetJug: 1 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 14, color: 'bg-purple-400' }], target: 2, targetJug: 1 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 17, color: 'bg-cyan-400' }, { capacity: 6, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 15, targetJug: 3 },
+  { jugs: [{ capacity: 25, color: 'bg-blue-400' }, { capacity: 13, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 1, targetJug: 0 },
+  { jugs: [{ capacity: 5, color: 'bg-blue-400' }, { capacity: 14, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 3, targetJug: 1 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 15, color: 'bg-cyan-400' }], target: 5, targetJug: 1 },
+  { jugs: [{ capacity: 13, color: 'bg-blue-400' }, { capacity: 21, color: 'bg-cyan-400' }], target: 2, targetJug: 0 },
+  { jugs: [{ capacity: 18, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }, { capacity: 15, color: 'bg-purple-400' }, { capacity: 23, color: 'bg-pink-400' }], target: 22, targetJug: 3 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 22, color: 'bg-purple-400' }], target: 17, targetJug: 2 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 18, color: 'bg-cyan-400' }, { capacity: 21, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 5, targetJug: 0 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 22, color: 'bg-purple-400' }], target: 14, targetJug: 0 },
+  { jugs: [{ capacity: 13, color: 'bg-blue-400' }, { capacity: 23, color: 'bg-cyan-400' }], target: 3, targetJug: 0 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }, { capacity: 15, color: 'bg-purple-400' }], target: 15, targetJug: 1 },
+  { jugs: [{ capacity: 25, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }, { capacity: 20, color: 'bg-pink-400' }], target: 6, targetJug: 0 },
+  { jugs: [{ capacity: 15, color: 'bg-blue-400' }, { capacity: 22, color: 'bg-cyan-400' }, { capacity: 23, color: 'bg-purple-400' }], target: 10, targetJug: 0 },
+  { jugs: [{ capacity: 5, color: 'bg-blue-400' }, { capacity: 6, color: 'bg-cyan-400' }], target: 5, targetJug: 0 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 24, color: 'bg-cyan-400' }, { capacity: 11, color: 'bg-purple-400' }, { capacity: 7, color: 'bg-pink-400' }], target: 7, targetJug: 2 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }], target: 5, targetJug: 1 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }], target: 2, targetJug: 0 },
+  { jugs: [{ capacity: 12, color: 'bg-blue-400' }, { capacity: 13, color: 'bg-cyan-400' }], target: 10, targetJug: 0 },
+  { jugs: [{ capacity: 9, color: 'bg-blue-400' }, { capacity: 13, color: 'bg-cyan-400' }, { capacity: 5, color: 'bg-purple-400' }, { capacity: 15, color: 'bg-pink-400' }], target: 13, targetJug: 1 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 20, color: 'bg-purple-400' }, { capacity: 14, color: 'bg-pink-400' }], target: 7, targetJug: 2 },
+  { jugs: [{ capacity: 17, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 5, color: 'bg-purple-400' }, { capacity: 22, color: 'bg-pink-400' }], target: 9, targetJug: 1 },
+  { jugs: [{ capacity: 14, color: 'bg-blue-400' }, { capacity: 22, color: 'bg-cyan-400' }], target: 8, targetJug: 0 },
+  { jugs: [{ capacity: 12, color: 'bg-blue-400' }, { capacity: 6, color: 'bg-cyan-400' }], target: 2, targetJug: 0 },
+  { jugs: [{ capacity: 3, color: 'bg-blue-400' }, { capacity: 20, color: 'bg-cyan-400' }, { capacity: 13, color: 'bg-purple-400' }, { capacity: 7, color: 'bg-pink-400' }], target: 6, targetJug: 3 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 4, color: 'bg-cyan-400' }, { capacity: 5, color: 'bg-purple-400' }], target: 10, targetJug: 0 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 11, color: 'bg-cyan-400' }, { capacity: 23, color: 'bg-purple-400' }], target: 10, targetJug: 1 },
+  { jugs: [{ capacity: 20, color: 'bg-blue-400' }, { capacity: 23, color: 'bg-cyan-400' }, { capacity: 21, color: 'bg-purple-400' }, { capacity: 7, color: 'bg-pink-400' }], target: 13, targetJug: 1 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 5, color: 'bg-cyan-400' }, { capacity: 7, color: 'bg-purple-400' }], target: 1, targetJug: 2 },
+  { jugs: [{ capacity: 16, color: 'bg-blue-400' }, { capacity: 12, color: 'bg-cyan-400' }, { capacity: 4, color: 'bg-purple-400' }], target: 1, targetJug: 2 },
+  { jugs: [{ capacity: 24, color: 'bg-blue-400' }, { capacity: 7, color: 'bg-cyan-400' }], target: 4, targetJug: 0 },
+  { jugs: [{ capacity: 8, color: 'bg-blue-400' }, { capacity: 19, color: 'bg-cyan-400' }, { capacity: 22, color: 'bg-purple-400' }, { capacity: 14, color: 'bg-pink-400' }], target: 4, targetJug: 0 },
+  { jugs: [{ capacity: 10, color: 'bg-blue-400' }, { capacity: 14, color: 'bg-cyan-400' }], target: 8, targetJug: 1 },
 ];
 
 export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRemaining, isTrialMode = false }) => {
-  const navigate = useNavigate();
   const [jugs, setJugs] = useState<Jug[]>([]);
   const [currentPuzzle, setCurrentPuzzle] = useState(0);
   const [steps, setSteps] = useState(0);
@@ -46,19 +143,40 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
   const [totalSteps, setTotalSteps] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Randomize puzzle order on component mount
+  const puzzles = useMemo(() => {
+    const selectedPuzzles = isTrialMode ? TRIAL_PUZZLES : MAIN_PUZZLES;
+    // Create a shuffled copy of the puzzles array
+    const shuffled = [...selectedPuzzles];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [isTrialMode]);
+  
+  const activePuzzle = useMemo(
+    () => (puzzles.length > 0 ? puzzles[currentPuzzle % puzzles.length] : null),
+    [puzzles, currentPuzzle]
+  );
+
   // Tab switch detection - only enabled when not in trial mode
   useTabSwitchDetection({
     maxViolations: 3,
     enabled: !isTrialMode,
     onDisqualified: () => {
-      // Mark as failed and navigate to assessment page
+      // Mark as failed - GameWrapper will handle navigation after saving
       onComplete(puzzlesCompleted, totalSteps, true, 'Disqualified due to tab switching violations');
-      navigate('/applicant/assessment');
     },
   });
 
   const initializePuzzle = useCallback((puzzleIndex: number) => {
-    const puzzle = PUZZLES[puzzleIndex % PUZZLES.length];
+    if (puzzles.length === 0) {
+      setJugs([]);
+      return;
+    }
+
+    const puzzle = puzzles[puzzleIndex % puzzles.length];
     const newJugs: Jug[] = puzzle.jugs.map((jug, index) => ({
       id: index,
       capacity: jug.capacity,
@@ -67,7 +185,7 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
     }));
     setJugs(newJugs);
     setSteps(0);
-  }, []);
+  }, [puzzles]);
 
   useEffect(() => {
     initializePuzzle(currentPuzzle);
@@ -80,10 +198,13 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
   }, [timeRemaining, puzzlesCompleted, totalSteps, onComplete, isTrialMode]);
 
   useEffect(() => {
-    const puzzle = PUZZLES[currentPuzzle % PUZZLES.length];
-    const targetJug = jugs[puzzle.targetJug];
-    
-    if (targetJug && targetJug.current === puzzle.target) {
+    if (!activePuzzle) {
+      return;
+    }
+
+    const targetJug = jugs[activePuzzle.targetJug];
+
+    if (targetJug && targetJug.current === activePuzzle.target) {
       setShowSuccess(true);
       setTimeout(() => {
         setPuzzlesCompleted(prev => prev + 1);
@@ -91,9 +212,7 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
         setShowSuccess(false);
       }, 1500);
     }
-  }, [jugs, currentPuzzle]);
-
-  const fillJug = (jugId: number) => {
+  }, [jugs, activePuzzle]);  const fillJug = (jugId: number) => {
     const newJugs = jugs.map(jug =>
       jug.id === jugId ? { ...jug, current: jug.capacity } : jug
     );
@@ -137,7 +256,9 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
     initializePuzzle(currentPuzzle);
   };
 
-  const puzzle = PUZZLES[currentPuzzle % PUZZLES.length];
+  if (!activePuzzle) {
+    return null;
+  }
 
   return (
     <motion.div
@@ -389,7 +510,7 @@ export const WaterCapacity: React.FC<WaterCapacityProps> = ({ onComplete, timeRe
           >
             <p className="text-lg font-bold text-[#030303] flex items-center justify-center gap-2">
               <Target className="w-6 h-6 text-[#8558ed]" />
-              Goal: Get exactly <span className="text-[#8558ed] text-3xl mx-2">{puzzle.target}L</span> in Jug {puzzle.targetJug + 1}
+              Goal: Get exactly <span className="text-[#8558ed] text-3xl mx-2">{activePuzzle.target}L</span> in Jug {activePuzzle.targetJug + 1}
             </p>
           </motion.div>
 

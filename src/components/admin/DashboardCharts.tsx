@@ -30,9 +30,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
     minesweeper: completedGames.length > 0 
       ? Math.round(completedGames.reduce((sum, a) => sum + (a.games.minesweeper?.puzzlesCompleted || 0), 0) / completedGames.length)
       : 0,
-    unblockMe: completedGames.length > 0 
-      ? Math.round(completedGames.reduce((sum, a) => sum + (a.games['unblock-me']?.puzzlesCompleted || 0), 0) / completedGames.length)
-      : 0,
     waterCapacity: completedGames.length > 0 
       ? Math.round(completedGames.reduce((sum, a) => sum + (a.games['water-capacity']?.puzzlesCompleted || 0), 0) / completedGames.length)
       : 0,
@@ -84,7 +81,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
         {/* Game Performance Chart */}
         <GamePerformanceChart
           minesweeper={averageScores.minesweeper}
-          unblockMe={averageScores.unblockMe}
           waterCapacity={averageScores.waterCapacity}
         />
       </motion.div>

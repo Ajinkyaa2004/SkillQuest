@@ -362,12 +362,10 @@ export const AssessmentCompletionChart: React.FC<{ completed: number; total: num
 
 export const GamePerformanceChart: React.FC<{
   minesweeper: number;
-  unblockMe: number;
   waterCapacity: number;
-}> = ({ minesweeper, unblockMe, waterCapacity }) => {
+}> = ({ minesweeper, waterCapacity }) => {
   const data = [
     { label: 'Minesweeper', value: minesweeper },
-    { label: 'Unblock Me', value: unblockMe },
     { label: 'Water Capacity', value: waterCapacity }
   ];
   

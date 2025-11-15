@@ -12,7 +12,6 @@ interface CandidateInsightsProps {
 interface GameTimeData {
   name: string;
   minesweeper: number;
-  unblockMe: number;
   waterCapacity: number;
 }
 
@@ -27,7 +26,6 @@ export const CandidateInsights: React.FC<CandidateInsightsProps> = ({ profiles, 
         return {
           name: profile.name,
           minesweeper: assessment.games.minesweeper?.timeSpent || 0,
-          unblockMe: assessment.games['unblock-me']?.timeSpent || 0,
           waterCapacity: assessment.games['water-capacity']?.timeSpent || 0,
         };
       })
@@ -39,7 +37,6 @@ export const CandidateInsights: React.FC<CandidateInsightsProps> = ({ profiles, 
   // Calculate average times for each game
   const avgTimes = {
     minesweeper: timeData.reduce((sum, item) => sum + item.minesweeper, 0) / timeData.length || 0,
-    unblockMe: timeData.reduce((sum, item) => sum + item.unblockMe, 0) / timeData.length || 0,
     waterCapacity: timeData.reduce((sum, item) => sum + item.waterCapacity, 0) / timeData.length || 0,
   };
 
@@ -52,7 +49,7 @@ export const CandidateInsights: React.FC<CandidateInsightsProps> = ({ profiles, 
 
   // Get the maximum time for scaling the bars
   const maxTime = Math.max(
-    ...timeData.flatMap(item => [item.minesweeper, item.unblockMe, item.waterCapacity])
+    ...timeData.flatMap(item => [item.minesweeper, item.waterCapacity])
   );
 
   return (
@@ -76,7 +73,7 @@ export const CandidateInsights: React.FC<CandidateInsightsProps> = ({ profiles, 
       </Card>
 
       {/* Average Time Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,27 +99,6 @@ export const CandidateInsights: React.FC<CandidateInsightsProps> = ({ profiles, 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-        >
-          <Card className="bg-gradient-to-br from-orange-500/5 to-orange-400/5 border-2 border-orange-500/20 hover:shadow-lg transition-all duration-300">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-600 to-orange-500 rounded-full flex items-center justify-center">
-                  <Car className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-orange-700">Unblock Me</h3>
-                  <p className="text-2xl font-extrabold text-orange-600">{formatTime(Math.round(avgTimes.unblockMe))}</p>
-                  <p className="text-sm text-gray-600">Average Time</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
         >
           <Card className="bg-gradient-to-br from-game-teal-500/5 to-game-teal-400/5 border-2 border-game-teal-500/20 hover:shadow-lg transition-all duration-300">
             <CardContent className="pt-6">
@@ -181,27 +157,6 @@ export const CandidateInsights: React.FC<CandidateInsightsProps> = ({ profiles, 
                       animate={{ width: `${(candidate.minesweeper / maxTime) * 100}%` }}
                       transition={{ duration: 1, delay: index * 0.1 }}
                       className="bg-gradient-to-r from-game-purple-600 to-game-purple-500 h-2 rounded-full"
-                    />
-                  </div>
-                </div>
-
-                {/* Unblock Me Bar */}
-                <div className="mb-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-orange-700 flex items-center gap-2">
-                      <Car className="w-4 h-4" />
-                      Unblock Me
-                    </span>
-                    <span className="text-sm font-bold text-orange-600">
-                      {formatTime(candidate.unblockMe)}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(candidate.unblockMe / maxTime) * 100}%` }}
-                      transition={{ duration: 1, delay: index * 0.1 + 0.1 }}
-                      className="bg-gradient-to-r from-orange-600 to-orange-500 h-2 rounded-full"
                     />
                   </div>
                 </div>

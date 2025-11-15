@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAssessmentByUserId, getProfileByUserId } from '@/lib/storage';
 import { Assessment, ApplicantProfile } from '@/types';
-import { Trophy, CheckCircle, Clock, Target, LogOut, Bomb, Car, Droplet, Award, Zap, Sparkles, Star, TrendingUp, AlertCircle, User, Mail, GraduationCap, MapPin, Send, Briefcase, PartyPopper, ArrowLeft } from 'lucide-react';
+import { Trophy, CheckCircle, Clock, Target, LogOut, Bomb, Car, Droplet, Award, Zap, Sparkles, Star, TrendingUp, AlertCircle, User, Mail, GraduationCap, MapPin, Briefcase, PartyPopper, ArrowLeft } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -17,6 +17,7 @@ export const Results: React.FC = () => {
 
   useEffect(() => {
     if (!user) {
+      console.log('Results: No user, redirecting to /');
       navigate('/');
       return;
     }
@@ -24,7 +25,15 @@ export const Results: React.FC = () => {
     const userProfile = getProfileByUserId(user.id);
     const userAssessment = getAssessmentByUserId(user.id);
 
+    console.log('Results Page - User Profile:', userProfile);
+    console.log('Results Page - User Assessment:', userAssessment);
+    console.log('Results Page - CompletedAt:', userAssessment?.completedAt);
+
     if (!userProfile || !userAssessment || !userAssessment.completedAt) {
+      console.log('Results: Missing data or completedAt, redirecting to assessment');
+      console.log('userProfile:', !!userProfile);
+      console.log('userAssessment:', !!userAssessment);
+      console.log('completedAt:', userAssessment?.completedAt);
       navigate('/applicant/assessment');
       return;
     }
@@ -45,14 +54,6 @@ export const Results: React.FC = () => {
       skill: 'Risk Assessment & Deductive Logic',
       score: assessment.games.minesweeper,
       gradient: 'from-[#8558ed] to-[#b18aff]',
-    },
-    {
-      type: 'unblock-me',
-      title: 'Unblock Me',
-      icon: Car,
-      skill: 'Spatial Reasoning & Planning',
-      score: assessment.games['unblock-me'],
-      gradient: 'from-[#9d6ff5] to-[#c49fff]',
     },
     {
       type: 'water-capacity',
@@ -218,7 +219,7 @@ export const Results: React.FC = () => {
         </motion.div>
 
         {/* Individual Game Scores */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {games.map((game, idx) => {
             const GameIcon = game.icon;
             const badge = game.score ? getScoreBadge(game.score.puzzlesCompleted) : null;
@@ -429,14 +430,6 @@ export const Results: React.FC = () => {
                 <div>
                   <div className="text-xs font-semibold text-[#8558ed]/70 uppercase">Location</div>
                   <div className="font-bold text-gray-800">{profile.location}</div>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-[#8558ed]/5 to-transparent rounded-lg">
-                <Send className="w-5 h-5 text-[#8558ed] flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-semibold text-[#8558ed]/70 uppercase">Telegram ID</div>
-                  <div className="font-bold text-gray-800">{profile.telegramId}</div>
                 </div>
               </div>
               
