@@ -8,33 +8,80 @@ import { Assessment, ApplicantProfile } from '@/types';
 import { Trophy, CheckCircle, Clock, Target, LogOut, Bomb, Car, Droplet, Award, Zap, Sparkles, Star, TrendingUp, AlertCircle, User, Mail, GraduationCap, MapPin, Send, Briefcase, PartyPopper, ArrowLeft } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 export const Results: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [profile, setProfile] = useState<ApplicantProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ UPDATED: Now async with MongoDB
   useEffect(() => {
-    if (!user) {
-      navigate('/');
-      return;
-    }
+    const loadResults = async () => {
+      if (!user) {
+        navigate('/');
+        return;
+      }
 
-    const userProfile = getProfileByUserId(user.id);
-    const userAssessment = getAssessmentByUserId(user.id);
+      try {
+        setIsLoading(true);
 
-    if (!userProfile || !userAssessment || !userAssessment.completedAt) {
-      navigate('/applicant/assessment');
-      return;
-    }
+        // ✅ Fetch profile from MongoDB (now async)
+        const userProfile = await getProfileByUserId(user.id);
+        
+        // ✅ Fetch assessment from MongoDB (now async)
+        const userAssessment = await getAssessmentByUserId(user.id);
 
-    setProfile(userProfile);
-    setAssessment(userAssessment);
+        if (!userProfile || !userAssessment || !userAssessment.completedAt) {
+          toast.warning('Assessment not completed yet. Redirecting to dashboard...', {
+            duration: 3000,
+            icon: '⚠️',
+          });
+          navigate('/applicant/assessment');
+          return;
+        }
+
+        setProfile(userProfile);
+        setAssessment(userAssessment);
+      } catch (error) {
+        console.error('Error loading results:', error);
+        toast.error('Failed to load results. Please try again.', {
+          duration: 4000,
+          icon: '❌',
+        });
+        navigate('/applicant/assessment');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadResults();
   }, [user, navigate]);
 
+  // ✅ Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            className="w-16 h-16 border-4 border-[#8558ed] border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-[#8558ed] font-semibold text-lg">Loading your results...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (!assessment || !profile) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return null;
   }
 
   const games = [
@@ -429,14 +476,6 @@ export const Results: React.FC = () => {
                 <div>
                   <div className="text-xs font-semibold text-[#8558ed]/70 uppercase">Location</div>
                   <div className="font-bold text-gray-800">{profile.location}</div>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-[#8558ed]/5 to-transparent rounded-lg">
-                <Send className="w-5 h-5 text-[#8558ed] flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-semibold text-[#8558ed]/70 uppercase">Telegram ID</div>
-                  <div className="font-bold text-gray-800">{profile.telegramId}</div>
                 </div>
               </div>
               

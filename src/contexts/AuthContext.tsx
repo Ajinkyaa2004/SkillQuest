@@ -1,92 +1,87 @@
-import React, {createContext, useContext, useState, useEffect} from "react";
-import {User, UserRole} from "@/types";
-import {
-  getCurrentUser,
-  setCurrentUser,
-  getUserByGoogleId,
-  saveUser,
-  initializeDefaultAdmin
-} from "@/lib/storage";
-import {generateId} from "@/lib/utils";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User, UserRole } from '@/types';
+import { getCurrentUser, setCurrentUser, getUserByGoogleId, saveUser, initializeDefaultAdmin } from '@/lib/storage';
+import { generateId } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
-  loginWithGoogle: (credential: string, role: UserRole) => Promise<boolean>;
+  loginWithGoogle: (credential: string, role: UserRole) => Promise<User | null>; // ✅ Changed return type
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
-  children
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize default admin (if needed for backward compatibility)
-    initializeDefaultAdmin();
+    const initAuth = async () => {
+      try {
+        await initializeDefaultAdmin();
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Check if user is already logged in
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
+    initAuth();
   }, []);
 
-  /**
-   * Login with Google OAuth
-   * Decodes the JWT credential from Google and creates/updates user
-   */
-  const loginWithGoogle = async (
-    credential: string,
-    role: UserRole
-  ): Promise<boolean> => {
+  // ✅ UPDATED: Now returns the user object
+  const loginWithGoogle = async (credential: string, role: UserRole): Promise<User | null> => {
+    setLoading(true);
+    
     try {
-      // Decode JWT token from Google (it's a base64-encoded JWT)
-      const payload = JSON.parse(atob(credential.split(".")[1]));
-
+      const payload = JSON.parse(atob(credential.split('.')[1]));
+      
       const googleId = payload.sub;
       const email = payload.email;
       const name = payload.name;
       const picture = payload.picture;
 
-      // Special case: Admin check using email domain or specific email
-      if (role === "admin") {
-        // Allow only specific admin emails (you can customize this logic)
-        const adminEmails = [
-          "admin@ifa.com",
-          "admin@insightfusionanalytics.com"
-        ];
+      console.log('🔐 Login attempt:', { email, role, googleId });
+
+      if (role === 'admin') {
+        const adminEmails = ['admin@ifa.com', 'admin@insightfusionanalytics.com'];
         if (!adminEmails.includes(email)) {
-          console.error("Unauthorized admin access attempt");
-          return false;
+          toast.error('Unauthorized: Admin access requires a valid admin email');
+          setLoading(false);
+          return null;
         }
       }
 
-      // Check if user exists by Google ID
-      const existingUser = getUserByGoogleId(googleId);
-
+      let existingUser = await getUserByGoogleId(googleId);
+      
       if (existingUser) {
-        // User exists, log them in
+        console.log('✅ Existing user found:', existingUser.id);
+        
         if (existingUser.role !== role) {
-          // Role mismatch - user trying to login with different role
-          console.error("Role mismatch: User exists with different role");
-          return false;
+          toast.error(`This account is registered as ${existingUser.role}, not ${role}`);
+          setLoading(false);
+          return null;
         }
-
-        // Update user info (in case name or picture changed)
+        
         existingUser.name = name;
         existingUser.picture = picture;
         existingUser.email = email;
-        saveUser(existingUser);
-
+        
+        await saveUser(existingUser);
         setUser(existingUser);
         setCurrentUser(existingUser);
-        return true;
+        
+        setLoading(false);
+        return existingUser; // ✅ Return user
       }
 
-      // New user - create account
       const newUser: User = {
         id: generateId(),
         googleId,
@@ -94,22 +89,31 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         name,
         picture,
         role,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
-      saveUser(newUser);
+      console.log('🆕 Creating new user:', newUser.id);
+
+      await saveUser(newUser);
       setUser(newUser);
       setCurrentUser(newUser);
-      return true;
+      
+      console.log('✅ User created and logged in:', newUser.id);
+      
+      setLoading(false);
+      return newUser; // ✅ Return user
     } catch (error) {
-      console.error("Google login error:", error);
-      return false;
+      console.error('❌ Google login error:', error);
+      toast.error('Login failed. Please try again.');
+      setLoading(false);
+      return null; // ✅ Return null on error
     }
   };
 
   const logout = () => {
     setUser(null);
     setCurrentUser(null);
+    toast.success('Logged out successfully');
   };
 
   return (
@@ -118,7 +122,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         user,
         loginWithGoogle,
         logout,
-        isAuthenticated: !!user
+        isAuthenticated: !!user,
+        loading,
       }}
     >
       {children}
@@ -129,7 +134,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

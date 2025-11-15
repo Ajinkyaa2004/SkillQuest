@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { StatCards } from './StatCards';
 import { DashboardCharts } from './DashboardCharts';
 import { CandidateInsights } from './CandidateInsights';
+import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -23,7 +24,9 @@ export const AdminDashboard: React.FC = () => {
   const [sortBy, setSortBy] = useState<'total' | 'minesweeper' | 'unblockMe' | 'waterCapacity'>('total');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [showMessageOptions, setShowMessageOptions] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ UPDATED: Now async with MongoDB
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/');
@@ -33,10 +36,35 @@ export const AdminDashboard: React.FC = () => {
     loadData();
   }, [user, navigate]);
 
-  const loadData = () => {
-    setProfiles(getProfiles());
-    setAssessments(getAssessments());
-    setLeaderboard(getLeaderboard());
+  // ✅ UPDATED: Made async
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // ✅ Fetch all data from MongoDB (now async)
+      const [profilesData, assessmentsData, leaderboardData] = await Promise.all([
+        getProfiles(),
+        getAssessments(),
+        getLeaderboard(),
+      ]);
+
+      setProfiles(profilesData);
+      setAssessments(assessmentsData);
+      setLeaderboard(leaderboardData);
+
+      toast.success('Dashboard data loaded successfully', {
+        duration: 2000,
+        icon: '✅',
+      });
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      toast.error('Failed to load dashboard data', {
+        duration: 4000,
+        icon: '❌',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredProfiles = profiles.filter(profile =>
@@ -66,11 +94,14 @@ export const AdminDashboard: React.FC = () => {
       }
     });
 
-
   const exportData = () => {
     const data = activeTab === 'leaderboard' ? filteredLeaderboard : filteredProfiles;
     const csv = convertToCSV(data);
     downloadCSV(csv, `${activeTab}-data-${new Date().toISOString().split('T')[0]}.csv`);
+    toast.success('Data exported successfully!', {
+      duration: 2000,
+      icon: '📥',
+    });
   };
 
   const convertToCSV = (data: any[]) => {
@@ -112,6 +143,26 @@ export const AdminDashboard: React.FC = () => {
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
+  // ✅ Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen playful-gradient flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            className="w-16 h-16 border-4 border-game-teal-500 border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-game-teal-700 font-semibold text-lg">Loading admin dashboard...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen playful-gradient relative overflow-hidden">
       {/* Animated Background Orbs */}
@@ -134,8 +185,6 @@ export const AdminDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Floating Icons */}
-
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
@@ -151,7 +200,7 @@ export const AdminDashboard: React.FC = () => {
             </h1>
             <p className="text-sm text-game-teal-600/70 font-medium mt-1 flex items-center gap-2">
               <Star className="w-4 h-4" />
-               IFA SkillQuest
+              IFA SkillQuest
             </p>
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -473,6 +522,7 @@ export const AdminDashboard: React.FC = () => {
           </motion.div>
         )}
 
+        {/* Leaderboard - Continue in next message... */}
         {/* Leaderboard */}
         {activeTab === 'leaderboard' && (
           <motion.div

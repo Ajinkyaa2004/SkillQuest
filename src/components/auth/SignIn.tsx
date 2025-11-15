@@ -89,69 +89,73 @@ export const SignIn: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleGoogleSuccess = async (
-    credentialResponse: CredentialResponse
-  ) => {
-    if (!credentialResponse.credential) {
-      toast.error("Google Sign-In failed. Please try again.", {
-        duration: 4000,
-        icon: "❌"
+  credentialResponse: CredentialResponse
+) => {
+  if (!credentialResponse.credential) {
+    toast.error("Google Sign-In failed. Please try again.", {
+      duration: 4000,
+      icon: "❌"
+    });
+    return;
+  }
+
+  if (!role) {
+    toast.error("Invalid role selected", {
+      duration: 4000,
+      icon: "⚠️"
+    });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // ✅ CRITICAL: Wait for login and get user object
+    const loggedInUser = await loginWithGoogle(
+      credentialResponse.credential,
+      role
+    );
+
+    if (loggedInUser) {
+      console.log('✅ User logged in successfully:', loggedInUser.id);
+      setShowSuccess(true);
+      toast.success(`Welcome! Logging you in as ${getRoleTitle()}...`, {
+        duration: 2000,
+        icon: "🎉"
       });
-      return;
-    }
 
-    if (!role) {
-      toast.error("Invalid role selected", {
-        duration: 4000,
-        icon: "⚠️"
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const success = await loginWithGoogle(
-        credentialResponse.credential,
-        role
+      // ✅ CRITICAL: Navigate after user is confirmed
+      setTimeout(() => {
+        if (role === "admin") {
+          navigate("/admin/dashboard");
+        } else if (role === "applicant") {
+          navigate("/applicant/profile");
+        } else {
+          navigate("/");
+        }
+      }, 1500);
+    } else {
+      toast.error(
+        role === "admin"
+          ? "Unauthorized: Admin access requires a valid admin email."
+          : "Authentication failed. Please try again or contact support.",
+        {
+          duration: 5000,
+          icon: "🚫"
+        }
       );
-
-      if (success) {
-        setShowSuccess(true);
-        toast.success(`Welcome! Logging you in as ${getRoleTitle()}...`, {
-          duration: 2000,
-          icon: "🎉"
-        });
-
-        setTimeout(() => {
-          if (role === "admin") {
-            navigate("/admin/dashboard");
-          } else if (role === "applicant") {
-            navigate("/applicant/profile");
-          } else {
-            navigate("/");
-          }
-        }, 1500);
-      } else {
-        toast.error(
-          role === "admin"
-            ? "Unauthorized: Admin access requires a valid admin email."
-            : "Authentication failed. Please try again or contact support.",
-          {
-            duration: 5000,
-            icon: "🚫"
-          }
-        );
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("An unexpected error occurred. Please try again.", {
-        duration: 4000,
-        icon: "❌"
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Login error:", error);
+    toast.error("An unexpected error occurred. Please try again.", {
+      duration: 4000,
+      icon: "❌"
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleGoogleError = () => {
     toast.error(

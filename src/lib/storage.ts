@@ -1,146 +1,173 @@
-import {User, ApplicantProfile, Assessment, LeaderboardEntry} from "@/types";
+import { User, ApplicantProfile, Assessment, LeaderboardEntry } from '@/types';
+import { userApi, profileApi, assessmentApi, leaderboardApi } from './api';
 
-const STORAGE_KEYS = {
-  USERS: "ifa_users",
-  PROFILES: "ifa_profiles",
-  ASSESSMENTS: "ifa_assessments",
-  CURRENT_USER: "ifa_current_user"
-};
+// ==================== USER MANAGEMENT ====================
 
-// User Management
-export const saveUser = (user: User): void => {
-  const users = getUsers();
-  const existingIndex = users.findIndex((u) => u.id === user.id);
-  if (existingIndex >= 0) {
-    users[existingIndex] = user;
-  } else {
-    users.push(user);
+export const saveUser = async (user: User): Promise<void> => {
+  try {
+    await userApi.createOrUpdate(user);
+    // Also save to localStorage for quick access
+    localStorage.setItem('ifa_current_user', JSON.stringify(user));
+  } catch (error) {
+    console.error('Error saving user:', error);
+    throw error;
   }
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
 };
 
-export const getUsers = (): User[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.USERS);
-  return data ? JSON.parse(data) : [];
+export const getUsers = async (): Promise<User[]> => {
+  try {
+    const users = await userApi.getAll();
+    return users;
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
 };
 
-export const getUserByEmail = (email: string): User | null => {
-  const users = getUsers();
-  return users.find((u) => u.email === email) || null;
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  try {
+    const user = await userApi.getByEmail(email);
+    return user;
+  } catch (error) {
+    // ✅ FIXED: Return null for 404 errors (user not found)
+    if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+      return null;
+    }
+    console.error('Error fetching user by email:', error);
+    return null;
+  }
 };
 
-// ✅ NEW: Get user by Google ID (for OAuth)
-export const getUserByGoogleId = (googleId: string): User | null => {
-  const users = getUsers();
-  return users.find((u) => u.googleId === googleId) || null;
+export const getUserByGoogleId = async (googleId: string): Promise<User | null> => {
+  try {
+    const user = await userApi.getByGoogleId(googleId);
+    return user;
+  } catch (error) {
+    // ✅ FIXED: Return null for 404 errors (user not found)
+    if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+      return null;
+    }
+    console.error('Error fetching user by Google ID:', error);
+    return null;
+  }
 };
 
 export const setCurrentUser = (user: User | null): void => {
   if (user) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    localStorage.setItem('ifa_current_user', JSON.stringify(user));
   } else {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem('ifa_current_user');
   }
 };
 
 export const getCurrentUser = (): User | null => {
-  const data = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  const data = localStorage.getItem('ifa_current_user');
   return data ? JSON.parse(data) : null;
 };
 
-// Profile Management
-export const saveProfile = (profile: ApplicantProfile): void => {
-  const profiles = getProfiles();
-  const existingIndex = profiles.findIndex((p) => p.userId === profile.userId);
-  if (existingIndex >= 0) {
-    profiles[existingIndex] = profile;
-  } else {
-    profiles.push(profile);
+// ==================== PROFILE MANAGEMENT ====================
+
+export const saveProfile = async (profile: ApplicantProfile): Promise<void> => {
+  try {
+    await profileApi.createOrUpdate(profile);
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    throw error;
   }
-  localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
 };
 
-export const getProfiles = (): ApplicantProfile[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.PROFILES);
-  return data ? JSON.parse(data) : [];
-};
-
-export const getProfileByUserId = (userId: string): ApplicantProfile | null => {
-  const profiles = getProfiles();
-  return profiles.find((p) => p.userId === userId) || null;
-};
-
-// Assessment Management
-export const saveAssessment = (assessment: Assessment): void => {
-  const assessments = getAssessments();
-  const existingIndex = assessments.findIndex(
-    (a) => a.userId === assessment.userId
-  );
-  if (existingIndex >= 0) {
-    assessments[existingIndex] = assessment;
-  } else {
-    assessments.push(assessment);
+export const getProfiles = async (): Promise<ApplicantProfile[]> => {
+  try {
+    const profiles = await profileApi.getAll();
+    return profiles;
+  } catch (error) {
+    console.error('Error fetching profiles:', error);
+    return [];
   }
-  localStorage.setItem(STORAGE_KEYS.ASSESSMENTS, JSON.stringify(assessments));
 };
 
-export const getAssessments = (): Assessment[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.ASSESSMENTS);
-  return data ? JSON.parse(data) : [];
+export const getProfileByUserId = async (userId: string): Promise<ApplicantProfile | null> => {
+  try {
+    const profile = await profileApi.getByUserId(userId);
+    return profile;
+  } catch (error) {
+    // ✅ FIXED: Return null for 404 errors (profile not found)
+    if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+      return null;
+    }
+    console.error('Error fetching profile:', error);
+    return null;
+  }
 };
 
-export const getAssessmentByUserId = (userId: string): Assessment | null => {
-  const assessments = getAssessments();
-  return assessments.find((a) => a.userId === userId) || null;
+// ==================== ASSESSMENT MANAGEMENT ====================
+
+export const saveAssessment = async (assessment: Assessment): Promise<void> => {
+  try {
+    await assessmentApi.createOrUpdate(assessment);
+  } catch (error) {
+    console.error('Error saving assessment:', error);
+    throw error;
+  }
 };
 
-// Leaderboard
-export const getLeaderboard = (): LeaderboardEntry[] => {
-  const profiles = getProfiles();
-  const assessments = getAssessments();
+export const getAssessments = async (): Promise<Assessment[]> => {
+  try {
+    const assessments = await assessmentApi.getAll();
+    return assessments;
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    return [];
+  }
+};
 
-  const leaderboard: LeaderboardEntry[] = assessments
-    .filter((a) => a.completedAt)
-    .map((assessment) => {
-      const profile = profiles.find((p) => p.userId === assessment.userId);
-      if (!profile) return null;
+export const getAssessmentByUserId = async (userId: string): Promise<Assessment | null> => {
+  try {
+    const assessment = await assessmentApi.getByUserId(userId);
+    return assessment;
+  } catch (error) {
+    // ✅ FIXED: Return null for 404 errors (assessment not found)
+    if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+      return null;
+    }
+    console.error('Error fetching assessment:', error);
+    return null;
+  }
+};
 
-      return {
-        candidateId: assessment.candidateId,
-        name: profile.name,
-        email: profile.email,
-        collegeName: profile.collegeName,
-        location: profile.location,
-        totalScore: assessment.totalScore,
-        completedAt: assessment.completedAt!,
-        gameScores: {
-          minesweeper: assessment.games.minesweeper?.puzzlesCompleted || 0,
-          unblockMe: assessment.games["unblock-me"]?.puzzlesCompleted || 0,
-          waterCapacity:
-            assessment.games["water-capacity"]?.puzzlesCompleted || 0
-        }
+// ==================== LEADERBOARD ====================
+
+export const getLeaderboard = async (): Promise<LeaderboardEntry[]> => {
+  try {
+    const leaderboard = await leaderboardApi.get();
+    return leaderboard;
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    return [];
+  }
+};
+
+// ==================== INITIALIZATION ====================
+
+export const initializeDefaultAdmin = async (): Promise<void> => {
+  try {
+    // Check if admin exists
+    const adminEmail = 'admin@ifa.com';
+    const existingAdmin = await getUserByEmail(adminEmail);
+    
+    if (!existingAdmin) {
+      const adminUser: User = {
+        id: 'admin-default',
+        email: adminEmail,
+        name: 'IFA Admin',
+        googleId: 'admin-legacy',
+        role: 'admin',
+        createdAt: new Date().toISOString(),
       };
-    })
-    .filter((entry): entry is LeaderboardEntry => entry !== null)
-    .sort((a, b) => b.totalScore - a.totalScore);
-
-  return leaderboard;
-};
-
-// ✅ UPDATED: Initialize default admin user with Google OAuth fields
-export const initializeDefaultAdmin = (): void => {
-  const users = getUsers();
-  const adminExists = users.some((u) => u.email === "admin@ifa.com");
-
-  if (!adminExists) {
-    const adminUser: User = {
-      id: "admin-default",
-      email: "admin@ifa.com",
-      name: "IFA Admin", // Added for Google OAuth compatibility
-      googleId: "admin-legacy", // Placeholder for backward compatibility
-      role: "admin",
-      createdAt: new Date().toISOString()
-    };
-    saveUser(adminUser);
+      await saveUser(adminUser);
+      console.log('✅ Default admin user created');
+    }
+  } catch (error) {
+    console.error('Error initializing default admin:', error);
   }
 };

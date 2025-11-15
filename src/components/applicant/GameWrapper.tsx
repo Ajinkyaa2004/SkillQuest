@@ -28,34 +28,71 @@ export const GameWrapper: React.FC = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [isDisqualified, setIsDisqualified] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ UPDATED: Now async with MongoDB
   useEffect(() => {
-    if (!user || !gameType) {
-      navigate('/');
-      return;
-    }
+    const checkGameAccess = async () => {
+      if (!user || !gameType) {
+        navigate('/');
+        return;
+      }
 
-    const assessment = getAssessmentByUserId(user.id);
-    if (!assessment) {
-      navigate('/applicant/assessment');
-      return;
-    }
+      try {
+        setIsLoading(true);
+        
+        // ✅ Fetch assessment from MongoDB (now async)
+        const assessment = await getAssessmentByUserId(user.id);
+        
+        if (!assessment) {
+          toast.error('Assessment not found. Please complete your profile first.', {
+            duration: 3000,
+            icon: '⚠️',
+          });
+          navigate('/applicant/assessment');
+          return;
+        }
 
-    // Check if game is unlocked
-    if (gameType === 'unblock-me' && !assessment.games.minesweeper) {
-      navigate('/applicant/assessment');
-      return;
-    }
-    if (gameType === 'water-capacity' && !assessment.games['unblock-me']) {
-      navigate('/applicant/assessment');
-      return;
-    }
+        // Check if game is unlocked
+        if (gameType === 'unblock-me' && !assessment.games.minesweeper) {
+          toast.warning('Please complete Minesweeper first to unlock this game.', {
+            duration: 3000,
+            icon: '🔒',
+          });
+          navigate('/applicant/assessment');
+          return;
+        }
+        if (gameType === 'water-capacity' && !assessment.games['unblock-me']) {
+          toast.warning('Please complete Unblock Me first to unlock this game.', {
+            duration: 3000,
+            icon: '🔒',
+          });
+          navigate('/applicant/assessment');
+          return;
+        }
 
-    // Check if already completed (for scored mode)
-    if (!isTrial && assessment.games[gameType]) {
-      navigate('/applicant/assessment');
-      return;
-    }
+        // Check if already completed (for scored mode)
+        if (!isTrial && assessment.games[gameType]) {
+          toast.info('You have already completed this game.', {
+            duration: 3000,
+            icon: 'ℹ️',
+          });
+          navigate('/applicant/assessment');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking game access:', error);
+        toast.error('Error loading game. Please try again.', {
+          duration: 4000,
+          icon: '❌',
+        });
+        navigate('/applicant/assessment');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkGameAccess();
   }, [user, gameType, navigate, isTrial]);
 
   // Timer
@@ -128,6 +165,10 @@ export const GameWrapper: React.FC = () => {
       await document.documentElement.requestFullscreen();
       setIsFullscreen(true);
       setGameStarted(true);
+      toast.success('Game started! Good luck!', {
+        duration: 2000,
+        icon: '🚀',
+      });
     } catch (err) {
       toast.error('Please enable fullscreen to start the assessment.', {
         duration: 4000,
@@ -142,45 +183,79 @@ export const GameWrapper: React.FC = () => {
     }
   };
 
-  const handleGameComplete = useCallback((score: number, metadata: number, failed?: boolean, failureReason?: string) => {
-    if (!user || !gameType || isTrial) {
-      if (isTrial) {
-        exitFullscreen();
-        navigate('/applicant/assessment');
-      }
+  // ✅ UPDATED: Now async with MongoDB
+  const handleGameComplete = useCallback(async (score: number, metadata: number, failed?: boolean, failureReason?: string) => {
+    if (!user || !gameType) {
       return;
     }
 
-    const assessment = getAssessmentByUserId(user.id);
-    if (!assessment) return;
-
-    const gameScore: GameScore = {
-      gameType,
-      puzzlesCompleted: score,
-      timeSpent: GAME_DURATION - timeRemaining,
-      errorRate: gameType === 'minesweeper' ? metadata : undefined,
-      minimumMoves: gameType !== 'minesweeper' ? metadata : undefined,
-      completedAt: new Date().toISOString(),
-      trialCompleted: false,
-      failed: failed || false,
-      failureReason: failureReason,
-    };
-
-    assessment.games[gameType] = gameScore;
-
-    // Calculate total score if all games completed
-    if (assessment.games.minesweeper && assessment.games['unblock-me'] && assessment.games['water-capacity']) {
-      assessment.totalScore = calculateTotalScore(
-        assessment.games.minesweeper.puzzlesCompleted,
-        assessment.games['unblock-me'].puzzlesCompleted,
-        assessment.games['water-capacity'].puzzlesCompleted
-      );
-      assessment.completedAt = new Date().toISOString();
+    if (isTrial) {
+      toast.success('Practice session completed!', {
+        duration: 2000,
+        icon: '✅',
+      });
+      exitFullscreen();
+      navigate('/applicant/assessment');
+      return;
     }
 
-    saveAssessment(assessment);
-    exitFullscreen();
-    navigate('/applicant/assessment');
+    try {
+      // ✅ Fetch assessment from MongoDB (now async)
+      const assessment = await getAssessmentByUserId(user.id);
+      if (!assessment) {
+        toast.error('Assessment not found.', {
+          duration: 3000,
+          icon: '⚠️',
+        });
+        return;
+      }
+
+      const gameScore: GameScore = {
+        gameType,
+        puzzlesCompleted: score,
+        timeSpent: GAME_DURATION - timeRemaining,
+        errorRate: gameType === 'minesweeper' ? metadata : undefined,
+        minimumMoves: gameType !== 'minesweeper' ? metadata : undefined,
+        completedAt: new Date().toISOString(),
+        trialCompleted: false,
+        failed: failed || false,
+        failureReason: failureReason,
+      };
+
+      assessment.games[gameType] = gameScore;
+
+      // Calculate total score if all games completed
+      if (assessment.games.minesweeper && assessment.games['unblock-me'] && assessment.games['water-capacity']) {
+        assessment.totalScore = calculateTotalScore(
+          assessment.games.minesweeper.puzzlesCompleted,
+          assessment.games['unblock-me'].puzzlesCompleted,
+          assessment.games['water-capacity'].puzzlesCompleted
+        );
+        assessment.completedAt = new Date().toISOString();
+        
+        toast.success('🎉 All games completed! View your results now!', {
+          duration: 4000,
+          icon: '🏆',
+        });
+      } else {
+        toast.success(`${getGameTitle()} completed successfully!`, {
+          duration: 3000,
+          icon: '✅',
+        });
+      }
+
+      // ✅ Save to MongoDB (now async)
+      await saveAssessment(assessment);
+      
+      exitFullscreen();
+      navigate('/applicant/assessment');
+    } catch (error) {
+      console.error('Error saving game completion:', error);
+      toast.error('Error saving game progress. Please try again.', {
+        duration: 4000,
+        icon: '❌',
+      });
+    }
   }, [user, gameType, timeRemaining, navigate, isTrial]);
 
   const quitGame = () => {
@@ -218,6 +293,26 @@ export const GameWrapper: React.FC = () => {
         return <div>Invalid game type</div>;
     }
   };
+
+  // ✅ Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f3f0fc] via-[#faf9fc] to-[#f3f0fc] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            className="w-16 h-16 border-4 border-[#8558ed] border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-[#8558ed] font-semibold">Loading game...</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (!gameStarted && !isTrial) {
     return (
