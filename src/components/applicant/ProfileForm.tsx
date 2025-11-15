@@ -9,9 +9,8 @@ import { ApplicantProfile, LOCATIONS, ROLES } from '@/types';
 import { saveProfile, getProfileByUserId } from '@/lib/storage';
 import { generateCandidateId } from '@/lib/utils';
 import { toast } from 'sonner';
-import { LogOut, Sparkles, Target, Zap, Star, Flame, Trophy, Link2, Globe, User, Mail, Phone, GraduationCap, Award, MapPin, Briefcase, Code, Palette, TrendingUp, Users, Megaphone, Heart, MoreHorizontal } from 'lucide-react';
+import { LogOut, Sparkles, Target, Zap, Star, Flame, Trophy, Link2, Globe, User, Mail, Phone, GraduationCap, Award, MapPin, Briefcase, Code, Palette, TrendingUp, Users, Megaphone, Heart, MoreHorizontal, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 
 // Floating icon component
 const FloatingIcon: React.FC<{ Icon: React.ElementType; delay: number; x: string; y: string; color: string }> = ({ Icon, delay, x, y, color }) => (
@@ -56,14 +55,16 @@ export const ProfileForm: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [profile, setProfile] = useState<Partial<ApplicantProfile>>({
+  const [profile, setProfile] = useState<Partial<ApplicantProfile> & { telegramId?: string }>({
     name: '',
     email: user?.email || '',
     phone: '',
     collegeName: '',
     cgpa: '',
     location: '',
+    telegramId: '',
     interestedRoles: [],
     resumeLink: '',
     websiteLink: '',
@@ -77,6 +78,7 @@ export const ProfileForm: React.FC = () => {
       profile.collegeName,
       profile.cgpa,
       profile.location,
+      profile.telegramId,
       profile.interestedRoles?.length,
     ];
     const filledFields = fields.filter(f => f && f !== '').length;
@@ -84,27 +86,108 @@ export const ProfileForm: React.FC = () => {
   };
 
   const progress = calculateProgress();
-
+  // ✅ FIXED: Better profile loading with proper redirect
   useEffect(() => {
-    if (!user) {
-      navigate('/');
-      return;
-    }
-
-    // Check if profile already exists
-    const existingProfile = getProfileByUserId(user.id);
-    if (existingProfile) {
-      if (existingProfile.profileCompleted) {
-        navigate('/applicant/assessment');
-      } else {
-        setProfile(existingProfile);
+    const loadProfile = async () => {
+      if (!user) {
+        navigate('/');
+        return;
       }
-    }
+
+      try {
+        setLoadingProfile(true);
+        
+        // ✅ Check if profile exists in MongoDB
+        const existingProfile = await getProfileByUserId(user.id);
+        
+        if (existingProfile) {
+          console.log('✅ Profile found:', existingProfile);
+          console.log('✅ Profile completed status:', existingProfile.profileCompleted);
+          
+          // ✅ CRITICAL: If profile is complete, redirect to assessment
+          if (existingProfile.profileCompleted === true) {
+            console.log('✅ Profile is complete, redirecting to assessment dashboard...');
+            toast.success('Profile loaded! Redirecting to assessment...', {
+              duration: 1500,
+              icon: '✅',
+            });
+            
+            // ✅ Small delay to ensure state is set
+            setTimeout(() => {
+              navigate('/applicant/assessment');
+            }, 500);
+            return;
+          }
+          
+          // Profile exists but incomplete - load it into form
+          console.log('ℹ️ Profile incomplete, loading into form');
+          setProfile({
+            name: existingProfile.name || '',
+            email: existingProfile.email || user.email || '',
+            phone: existingProfile.phone || '',
+            collegeName: existingProfile.collegeName || '',
+            cgpa: existingProfile.cgpa || '',
+            location: existingProfile.location || '',
+            telegramId: (existingProfile as any).telegramId || '',
+            interestedRoles: existingProfile.interestedRoles || [],
+            resumeLink: existingProfile.resumeLink || '',
+            websiteLink: existingProfile.websiteLink || '',
+          });
+          
+          toast.info('Please complete your profile', {
+            duration: 2000,
+            icon: 'ℹ️',
+          });
+        } else {
+          console.log('ℹ️ No profile found, showing empty form');
+          
+          // Pre-fill with user data from auth
+          setProfile(prev => ({
+            ...prev,
+            name: user.name || '',
+            email: user.email || '',
+          }));
+        }
+      } catch (error) {
+        console.error('❌ Error loading profile:', error);
+        toast.error('Error loading profile data', {
+          duration: 3000,
+          icon: '⚠️',
+        });
+        
+        // Pre-fill with user data even on error
+        setProfile(prev => ({
+          ...prev,
+          name: user.name || '',
+          email: user.email || '',
+        }));
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      toast.error('User not found. Please log in again.', {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!profile.name || !profile.phone || !profile.collegeName || !profile.cgpa || 
+        !profile.location || !profile.telegramId || !profile.interestedRoles?.length) {
+      toast.error('Please fill in all required fields', {
+        duration: 4000,
+        icon: '⚠️',
+      });
+      return;
+    }
 
     setLoading(true);
 
@@ -112,31 +195,85 @@ export const ProfileForm: React.FC = () => {
       const completeProfile: ApplicantProfile = {
         userId: user.id,
         candidateId: generateCandidateId(),
-        name: profile.name!,
-        email: profile.email!,
-        phone: profile.phone!,
-        collegeName: profile.collegeName!,
-        cgpa: profile.cgpa!,
-        location: profile.location!,
-        interestedRoles: profile.interestedRoles!,
-        profileCompleted: true,
+        name: profile.name,
+        email: profile.email || user.email,
+        phone: profile.phone,
+        collegeName: profile.collegeName,
+        cgpa: profile.cgpa,
+        location: profile.location,
+        telegramId: profile.telegramId,
+        interestedRoles: profile.interestedRoles,
+        resumeLink: profile.resumeLink,
+        websiteLink: profile.websiteLink,
+        profileCompleted: true, // ✅ CRITICAL: Set to true
         createdAt: new Date().toISOString(),
       };
 
-      saveProfile(completeProfile);
+      console.log('📝 Saving profile:', completeProfile);
+
+      // ✅ Save to MongoDB
+      await saveProfile(completeProfile);
       
-      // Show success message
+      console.log('✅ Profile saved successfully!');
+      
+      toast.success('Profile saved successfully!', {
+        duration: 2000,
+        icon: '✅',
+      });
+      
+      // Show success animation
       setShowSuccess(true);
+      
       setTimeout(() => {
         navigate('/applicant/assessment');
       }, 2000);
     } catch (error) {
+      console.error('❌ Error saving profile:', error);
       toast.error('Error saving profile. Please try again.', {
         duration: 4000,
         icon: '❌',
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveAndLogout = async () => {
+    if (!user) return;
+
+    try {
+      const partialProfile: ApplicantProfile = {
+        userId: user.id,
+        candidateId: generateCandidateId(),
+        name: profile.name || '',
+        email: profile.email || user.email || '',
+        phone: profile.phone || '',
+        collegeName: profile.collegeName || '',
+        cgpa: profile.cgpa || '',
+        location: profile.location || '',
+        telegramId: profile.telegramId || '',
+        interestedRoles: profile.interestedRoles || [],
+        resumeLink: profile.resumeLink,
+        websiteLink: profile.websiteLink,
+        profileCompleted: false, // ✅ Mark as incomplete
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save partial profile to MongoDB
+      await saveProfile(partialProfile);
+      
+      toast.success('Progress saved successfully!', {
+        duration: 2000,
+        icon: '💾',
+      });
+      
+      setTimeout(() => logout(), 500);
+    } catch (error) {
+      console.error('Error saving progress:', error);
+      toast.error('Error saving progress', {
+        duration: 3000,
+        icon: '⚠️',
+      });
     }
   };
 
@@ -155,6 +292,25 @@ export const ProfileForm: React.FC = () => {
     }
   };
 
+  // Show loading state while fetching profile
+  if (loadingProfile) {
+    return (
+      <div className="min-h-screen playful-gradient flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            className="w-16 h-16 border-4 border-game-purple-500 border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-game-purple-700 font-semibold">Loading your profile...</p>
+        </motion.div>
+      </div>
+    );
+  }
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -305,257 +461,266 @@ export const ProfileForm: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-game-purple-500/20 via-blue-500/20 to-orange-500/20 rounded-xl blur-sm -z-10"></div>
             <div className="absolute inset-[1px] bg-white/95 backdrop-blur-xl rounded-xl"></div>
             <div className="relative">
-            <CardHeader>
-              <CardTitle className="text-2xl bg-gradient-to-r from-game-purple-700 to-game-purple-500 bg-clip-text text-transparent">Applicant Information</CardTitle>
-              <CardDescription>
-                All fields marked with * are required. Your Candidate ID will be generated automatically.
-              </CardDescription>
-            </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Personal Information */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="space-y-4"
-              >
-                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-game-purple-600" />
-                      Full Name *
-                    </Label>
-                    <Input
-                      id="name"
-                      value={profile.name}
-                      onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-game-purple-600" />
-                      Email *
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={profile.email}
-                      disabled
-                      className="bg-gray-100"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-game-purple-600" />
-                      Phone Number *
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={profile.phone}
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
-                      required
-                    />
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Academic Information */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="space-y-4"
-              >
-                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5" />
-                  Academic Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="college" className="flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-game-purple-600" />
-                      College Name *
-                    </Label>
-                    <Input
-                      id="college"
-                      value={profile.collegeName}
-                      onChange={(e) => setProfile({ ...profile, collegeName: e.target.value })}
-                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cgpa" className="flex items-center gap-2">
-                      <Award className="w-4 h-4 text-game-purple-600" />
-                      CGPA/GPA *
-                    </Label>
-                    <Input
-                      id="cgpa"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="10"
-                      value={profile.cgpa}
-                      onChange={(e) => setProfile({ ...profile, cgpa: e.target.value })}
-                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
-                      required
-                    />
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Career Intent */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="space-y-4"
-              >
-                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5" />
-                  Career Intent
-                </h3>
-                <div className="space-y-2">
-                  <Label htmlFor="location" className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-game-purple-600" />
-                    Preferred Location *
-                  </Label>
-                  <select
-                    id="location"
-                    className="flex h-10 w-full rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20 px-3 py-2 text-sm"
-                    value={profile.location}
-                    onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-                    required
+              <CardHeader>
+                <CardTitle className="text-2xl bg-gradient-to-r from-game-purple-700 to-game-purple-500 bg-clip-text text-transparent">Applicant Information</CardTitle>
+                <CardDescription>
+                  All fields marked with * are required. Your Candidate ID will be generated automatically.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Personal Information */}
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="space-y-4"
                   >
-                    <option value="">Select a location</option>
-                    {LOCATIONS.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-game-purple-600" />
-                    Interested Roles * (Select at least one)
-                  </Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {ROLES.map((role) => {
-                      const RoleIcon = getRoleIcon(role);
-                      const isSelected = profile.interestedRoles?.includes(role);
-                      return (
-                        <motion.label
-                          key={role}
-                          whileHover={{ scale: 1.03, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={`flex items-center space-x-2 p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                            isSelected
-                              ? 'border-game-purple-500 bg-gradient-to-br from-game-purple-500/10 to-game-purple-400/10 shadow-md'
-                              : 'border-gray-200 hover:border-game-purple-500/50 hover:shadow-sm'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleRoleToggle(role)}
-                            className="hidden"
-                          />
-                          <RoleIcon className={`w-5 h-5 ${isSelected ? 'text-game-purple-600' : 'text-gray-400'}`} />
-                          <span className={`text-sm font-medium ${isSelected ? 'text-game-purple-700' : 'text-gray-700'}`}>
-                            {role}
-                          </span>
-                        </motion.label>
-                      );
-                    })}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Resume & Website Links */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
-                  <Link2 className="w-5 h-5" />
-                  Links & Portfolio
-                </h3>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="resumeLink" className="flex items-center gap-2">
-                      <Link2 className="w-4 h-4 text-game-purple-600" />
-                      Resume Link (Google Drive, Dropbox, etc.)
-                    </Label>
-                    <Input
-                      id="resumeLink"
-                      type="url"
-                      value={profile.resumeLink}
-                      onChange={(e) => setProfile({ ...profile, resumeLink: e.target.value })}
-                      placeholder="https://drive.google.com/..."
-                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Share a public link to your resume (PDF format recommended)
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="websiteLink" className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-game-purple-600" />
-                      Website/Portfolio Link (Optional)
-                    </Label>
-                    <Input
-                      id="websiteLink"
-                      type="url"
-                      value={profile.websiteLink}
-                      onChange={(e) => setProfile({ ...profile, websiteLink: e.target.value })}
-                      placeholder="https://yourportfolio.com"
-                      className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Share your portfolio, GitHub, LinkedIn, or personal website
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      toast.info('Your progress has been saved!', {
-                        duration: 2000,
-                        icon: '💾',
-                      });
-                      setTimeout(() => logout(), 500);
-                    }}
-                    className="border-2 border-game-purple-500/30 text-game-purple-700 hover:bg-game-purple-50"
+                    <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      Personal Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-game-purple-600" />
+                          Full Name *
+                        </Label>
+                        <Input
+                          id="name"
+                          value={profile.name}
+                          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-game-purple-600" />
+                          Email *
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={profile.email}
+                          disabled
+                          className="bg-gray-100"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-game-purple-600" />
+                          Phone Number *
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={profile.phone}
+                          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telegramId" className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-game-purple-600" />
+                          Telegram ID *
+                        </Label>
+                        <Input
+                          id="telegramId"
+                          type="text"
+                          placeholder="@username"
+                          value={profile.telegramId}
+                          onChange={(e) => setProfile({ ...profile, telegramId: e.target.value })}
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                  {/* Academic Information */}
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="space-y-4"
                   >
-                    Save & Logout
-                  </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    type="submit"
-                    disabled={loading || !profile.interestedRoles?.length}
-                    className="bg-gradient-to-r from-game-purple-700 via-game-purple-600 to-game-purple-500 hover:from-game-purple-800 hover:via-game-purple-700 hover:to-game-purple-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-game-purple-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-game-purple-500/40"
+                    <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5" />
+                      Academic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="college" className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-game-purple-600" />
+                          College Name *
+                        </Label>
+                        <Input
+                          id="college"
+                          value={profile.collegeName}
+                          onChange={(e) => setProfile({ ...profile, collegeName: e.target.value })}
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cgpa" className="flex items-center gap-2">
+                          <Award className="w-4 h-4 text-game-purple-600" />
+                          CGPA/GPA *
+                        </Label>
+                        <Input
+                          id="cgpa"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="10"
+                          value={profile.cgpa}
+                          onChange={(e) => setProfile({ ...profile, cgpa: e.target.value })}
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Career Intent */}
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                    className="space-y-4"
                   >
-                    {loading ? 'Saving...' : 'Continue to Assessment'}
-                  </Button>
-                </motion.div>
-              </div>
-            </form>
-          </CardContent>
-          </div>
-        </Card>
+                    <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
+                      <Briefcase className="w-5 h-5" />
+                      Career Intent
+                    </h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="location" className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-game-purple-600" />
+                        Preferred Location *
+                      </Label>
+                      <select
+                        id="location"
+                        className="flex h-10 w-full rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20 px-3 py-2 text-sm"
+                        value={profile.location}
+                        onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                        required
+                      >
+                        <option value="">Select a location</option>
+                        {LOCATIONS.map((loc) => (
+                          <option key={loc} value={loc}>
+                            {loc}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-game-purple-600" />
+                        Interested Roles * (Select at least one)
+                      </Label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {ROLES.map((role) => {
+                          const RoleIcon = getRoleIcon(role);
+                          const isSelected = profile.interestedRoles?.includes(role);
+                          return (
+                            <motion.label
+                              key={role}
+                              whileHover={{ scale: 1.03, y: -2 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`flex items-center space-x-2 p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                                isSelected
+                                  ? 'border-game-purple-500 bg-gradient-to-br from-game-purple-500/10 to-game-purple-400/10 shadow-md'
+                                  : 'border-gray-200 hover:border-game-purple-500/50 hover:shadow-sm'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleRoleToggle(role)}
+                                className="hidden"
+                              />
+                              <RoleIcon className={`w-5 h-5 ${isSelected ? 'text-game-purple-600' : 'text-gray-400'}`} />
+                              <span className={`text-sm font-medium ${isSelected ? 'text-game-purple-700' : 'text-gray-700'}`}>
+                                {role}
+                              </span>
+                            </motion.label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Resume & Website Links */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-game-purple-700 flex items-center gap-2">
+                      <Link2 className="w-5 h-5" />
+                      Links & Portfolio
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="resumeLink" className="flex items-center gap-2">
+                          <Link2 className="w-4 h-4 text-game-purple-600" />
+                          Resume Link (Google Drive, Dropbox, etc.)
+                        </Label>
+                        <Input
+                          id="resumeLink"
+                          type="url"
+                          value={profile.resumeLink}
+                          onChange={(e) => setProfile({ ...profile, resumeLink: e.target.value })}
+                          placeholder="https://drive.google.com/..."
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Share a public link to your resume (PDF format recommended)
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="websiteLink" className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-game-purple-600" />
+                          Website/Portfolio Link (Optional)
+                        </Label>
+                        <Input
+                          id="websiteLink"
+                          type="url"
+                          value={profile.websiteLink}
+                          onChange={(e) => setProfile({ ...profile, websiteLink: e.target.value })}
+                          placeholder="https://yourportfolio.com"
+                          className="rounded-xl border-2 border-game-purple-500/20 focus:border-game-purple-500 focus:ring-4 focus:ring-game-purple-500/10 transition-all duration-300 bg-gradient-to-r from-white to-purple-50/30 hover:from-purple-50/20 hover:to-blue-50/20"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Share your portfolio, GitHub, LinkedIn, or personal website
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-4 pt-4">
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSaveAndLogout}
+                        disabled={loading}
+                        className="border-2 border-game-purple-500/30 text-game-purple-700 hover:bg-game-purple-50"
+                      >
+                        Save & Logout
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        type="submit"
+                        disabled={loading || !profile.interestedRoles?.length}
+                        className="bg-gradient-to-r from-game-purple-700 via-game-purple-600 to-game-purple-500 hover:from-game-purple-800 hover:via-game-purple-700 hover:to-game-purple-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-game-purple-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-game-purple-500/40"
+                      >
+                        {loading ? 'Saving...' : 'Continue to Assessment'}
+                      </Button>
+                    </motion.div>
+                  </div>
+                </form>
+              </CardContent>
+            </div>
+          </Card>
         </motion.div>
       </div>
     </motion.div>

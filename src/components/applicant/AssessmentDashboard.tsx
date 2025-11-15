@@ -7,6 +7,7 @@ import { getProfileByUserId, getAssessmentByUserId, saveAssessment } from '@/lib
 import { Assessment, GameType } from '@/types';
 import { Trophy, CheckCircle, Clock, LogOut, Sparkles, Zap, Star, Target, Flame, Flag, XCircle, Play, Lock, Bomb, Car, Droplet, Rocket, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 // Confetti component
 const Confetti: React.FC = () => {
@@ -150,7 +151,6 @@ const SubtleHoverCard: React.FC<{ children: React.ReactNode; disabled?: boolean 
     </motion.div>
   );
 };
-
 export const AssessmentDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -161,46 +161,67 @@ export const AssessmentDashboard: React.FC = () => {
   const [isExiting, setIsExiting] = useState(false);
   const [showRetryInfo, setShowRetryInfo] = useState<{[key: string]: boolean}>({});
 
+  // ✅ UPDATED: Now async with MongoDB
   useEffect(() => {
     const loadData = async () => {
-      setIsLoading(true);
-      
-      // Simulate loading delay for smooth skeleton animation
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       if (!user) {
         navigate('/');
         return;
       }
 
-      const userProfile = getProfileByUserId(user.id);
-      if (!userProfile || !userProfile.profileCompleted) {
-        navigate('/applicant/profile');
-        return;
-      }
-      setProfile(userProfile);
+      try {
+        setIsLoading(true);
+        
+        // Simulate loading delay for smooth skeleton animation
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-      let userAssessment = getAssessmentByUserId(user.id);
-      if (!userAssessment) {
-        userAssessment = {
-          userId: user.id,
-          candidateId: userProfile.candidateId,
-          games: {
-            minesweeper: null,
-            'unblock-me': null,
-            'water-capacity': null,
-          },
-          totalScore: 0,
-          trialMode: {
-            minesweeper: false,
-            'unblock-me': false,
-            'water-capacity': false,
-          },
-        };
-        saveAssessment(userAssessment);
+        // ✅ Fetch profile from MongoDB (now async)
+        const userProfile = await getProfileByUserId(user.id);
+        
+        if (!userProfile || !userProfile.profileCompleted) {
+          navigate('/applicant/profile');
+          return;
+        }
+        setProfile(userProfile);
+
+        // ✅ Fetch assessment from MongoDB (now async)
+        let userAssessment = await getAssessmentByUserId(user.id);
+        
+        if (!userAssessment) {
+          // Create new assessment if doesn't exist
+          userAssessment = {
+            userId: user.id,
+            candidateId: userProfile.candidateId,
+            games: {
+              minesweeper: null,
+              'unblock-me': null,
+              'water-capacity': null,
+            },
+            totalScore: 0,
+            trialMode: {
+              minesweeper: false,
+              'unblock-me': false,
+              'water-capacity': false,
+            },
+          };
+          // ✅ Save to MongoDB (now async)
+          await saveAssessment(userAssessment);
+          toast.info('New assessment initialized', {
+            duration: 2000,
+            icon: '📝',
+          });
+        }
+        
+        setAssessment(userAssessment);
+      } catch (error) {
+        console.error('Error loading assessment data:', error);
+        toast.error('Failed to load assessment data. Please try again.', {
+          duration: 4000,
+          icon: '❌',
+        });
+      } finally {
+        setIsLoading(false);
       }
-      setAssessment(userAssessment);
-      setIsLoading(false);
     };
     
     loadData();
@@ -322,12 +343,11 @@ export const AssessmentDashboard: React.FC = () => {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 5000);
     }
-  }, [allGamesCompleted]);
+  }, [allGamesCompleted, showConfetti]);
 
   if (isLoading || !assessment || !profile) {
     return <LoadingSkeleton />;
   }
-
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -548,7 +568,6 @@ export const AssessmentDashboard: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
           initial="hidden"
@@ -563,7 +582,7 @@ export const AssessmentDashboard: React.FC = () => {
             },
           }}
         >
-          {games.map((game, _) => {
+          {games.map((game) => {
             const unlocked = isGameUnlocked(game.type);
             const completed = isGameCompleted(game.type);
             const trialUnlocked = isTrialUnlocked(game.type);
@@ -822,7 +841,6 @@ export const AssessmentDashboard: React.FC = () => {
             );
           })}
         </motion.div>
-
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
