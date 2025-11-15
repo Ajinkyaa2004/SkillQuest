@@ -1,16 +1,16 @@
-import { User, ApplicantProfile, Assessment, LeaderboardEntry } from '@/types';
+import {User, ApplicantProfile, Assessment, LeaderboardEntry} from "@/types";
 
 const STORAGE_KEYS = {
-  USERS: 'ifa_users',
-  PROFILES: 'ifa_profiles',
-  ASSESSMENTS: 'ifa_assessments',
-  CURRENT_USER: 'ifa_current_user',
+  USERS: "ifa_users",
+  PROFILES: "ifa_profiles",
+  ASSESSMENTS: "ifa_assessments",
+  CURRENT_USER: "ifa_current_user"
 };
 
 // User Management
 export const saveUser = (user: User): void => {
   const users = getUsers();
-  const existingIndex = users.findIndex(u => u.id === user.id);
+  const existingIndex = users.findIndex((u) => u.id === user.id);
   if (existingIndex >= 0) {
     users[existingIndex] = user;
   } else {
@@ -26,7 +26,13 @@ export const getUsers = (): User[] => {
 
 export const getUserByEmail = (email: string): User | null => {
   const users = getUsers();
-  return users.find(u => u.email === email) || null;
+  return users.find((u) => u.email === email) || null;
+};
+
+// ✅ NEW: Get user by Google ID (for OAuth)
+export const getUserByGoogleId = (googleId: string): User | null => {
+  const users = getUsers();
+  return users.find((u) => u.googleId === googleId) || null;
 };
 
 export const setCurrentUser = (user: User | null): void => {
@@ -45,7 +51,7 @@ export const getCurrentUser = (): User | null => {
 // Profile Management
 export const saveProfile = (profile: ApplicantProfile): void => {
   const profiles = getProfiles();
-  const existingIndex = profiles.findIndex(p => p.userId === profile.userId);
+  const existingIndex = profiles.findIndex((p) => p.userId === profile.userId);
   if (existingIndex >= 0) {
     profiles[existingIndex] = profile;
   } else {
@@ -61,13 +67,15 @@ export const getProfiles = (): ApplicantProfile[] => {
 
 export const getProfileByUserId = (userId: string): ApplicantProfile | null => {
   const profiles = getProfiles();
-  return profiles.find(p => p.userId === userId) || null;
+  return profiles.find((p) => p.userId === userId) || null;
 };
 
 // Assessment Management
 export const saveAssessment = (assessment: Assessment): void => {
   const assessments = getAssessments();
-  const existingIndex = assessments.findIndex(a => a.userId === assessment.userId);
+  const existingIndex = assessments.findIndex(
+    (a) => a.userId === assessment.userId
+  );
   if (existingIndex >= 0) {
     assessments[existingIndex] = assessment;
   } else {
@@ -83,20 +91,20 @@ export const getAssessments = (): Assessment[] => {
 
 export const getAssessmentByUserId = (userId: string): Assessment | null => {
   const assessments = getAssessments();
-  return assessments.find(a => a.userId === userId) || null;
+  return assessments.find((a) => a.userId === userId) || null;
 };
 
 // Leaderboard
 export const getLeaderboard = (): LeaderboardEntry[] => {
   const profiles = getProfiles();
   const assessments = getAssessments();
-  
+
   const leaderboard: LeaderboardEntry[] = assessments
-    .filter(a => a.completedAt)
-    .map(assessment => {
-      const profile = profiles.find(p => p.userId === assessment.userId);
+    .filter((a) => a.completedAt)
+    .map((assessment) => {
+      const profile = profiles.find((p) => p.userId === assessment.userId);
       if (!profile) return null;
-      
+
       return {
         candidateId: assessment.candidateId,
         name: profile.name,
@@ -107,28 +115,31 @@ export const getLeaderboard = (): LeaderboardEntry[] => {
         completedAt: assessment.completedAt!,
         gameScores: {
           minesweeper: assessment.games.minesweeper?.puzzlesCompleted || 0,
-          unblockMe: assessment.games['unblock-me']?.puzzlesCompleted || 0,
-          waterCapacity: assessment.games['water-capacity']?.puzzlesCompleted || 0,
+          unblockMe: assessment.games["unblock-me"]?.puzzlesCompleted || 0,
+          waterCapacity:
+            assessment.games["water-capacity"]?.puzzlesCompleted || 0
         }
       };
     })
     .filter((entry): entry is LeaderboardEntry => entry !== null)
     .sort((a, b) => b.totalScore - a.totalScore);
-  
+
   return leaderboard;
 };
 
-// Initialize default admin user
+// ✅ UPDATED: Initialize default admin user with Google OAuth fields
 export const initializeDefaultAdmin = (): void => {
   const users = getUsers();
-  const adminExists = users.some(u => u.email === 'admin@ifa.com');
-  
+  const adminExists = users.some((u) => u.email === "admin@ifa.com");
+
   if (!adminExists) {
     const adminUser: User = {
-      id: 'admin-default',
-      email: 'admin@ifa.com',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
+      id: "admin-default",
+      email: "admin@ifa.com",
+      name: "IFA Admin", // Added for Google OAuth compatibility
+      googleId: "admin-legacy", // Placeholder for backward compatibility
+      role: "admin",
+      createdAt: new Date().toISOString()
     };
     saveUser(adminUser);
   }
